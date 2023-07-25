@@ -1,4 +1,4 @@
-import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { PublicKey, Keypair, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
 export interface ListingData {
     catalog: string;
@@ -58,6 +58,10 @@ export interface ListingSyncData {
     listing_add: Array<ListingAddData>;
     listing_remove: string[];
 }
+export interface ListingSyncResult {
+    listingsAdded: string[];
+    listingsRemoved: string[];
+}
 export interface CatalogRootData {
     rootData: PublicKey;
     authData: PublicKey;
@@ -84,13 +88,13 @@ export declare class ListingClient {
     getListingSpec(listingData: ListingData): ListingSpec;
     getListingInstructions(listingSpec: ListingSpec, feePayer: PublicKey, catalog: string): Promise<ListingInstructions>;
     getCatalogRootData(): Promise<CatalogRootData>;
-    removeListing(programRoot: CatalogRootData, listing: string, user: PublicKey): Promise<string>;
-    applyListingSync(syncData: ListingSyncData, catalog: string): Promise<boolean>;
-    sendListingInstructions(li: ListingInstructions): Promise<string[]>;
+    removeListing(programRoot: CatalogRootData, listing: string, owner: Keypair, feeRecipient: Keypair): Promise<string>;
+    applyListingSync(syncData: ListingSyncData, catalog: string, owner: Keypair, feePayer: Keypair): Promise<ListingSyncResult>;
+    sendListingInstructions(li: ListingInstructions, owner: Keypair, feePayer: Keypair): Promise<string[]>;
     storeRecord(user: string, record: string, data: any): Promise<any>;
     storeListing(user: string, record: string, catalog: number, listing: string): Promise<any>;
     storeRecordAndListing(user: string, record: string, data: any, catalog: number, listing: string): Promise<any>;
-    syncListings(catalog?: string): Promise<boolean>;
+    syncListings(owner: Keypair, feePayer: Keypair, catalog?: string): Promise<ListingSyncResult>;
     getToken(): Promise<string>;
 }
 //# sourceMappingURL=index.d.ts.map

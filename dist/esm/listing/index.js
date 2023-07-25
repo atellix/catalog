@@ -304,7 +304,7 @@ export class ListingClient {
             authData: rootAccount.rootAuthority,
         };
     }
-    async removeListing(programRoot, listing, user) {
+    async removeListing(programRoot, listing, owner, feeRecipient) {
         const listingPK = new PublicKey(listing);
         const listingData = await this.catalogProgram.account.catalogEntry.fetch(listingPK);
         var catBuf = Buffer.alloc(8);
@@ -316,19 +316,27 @@ export class ListingClient {
             'accounts': {
                 rootData: programRoot.rootData,
                 authData: programRoot.authData,
-                authUser: user,
+                authUser: owner.publicKey,
                 catalog: catalogPK,
                 listing: listingPK,
-                feeRecipient: user,
+                feeRecipient: feeRecipient.publicKey,
                 systemProgram: SystemProgram.programId,
             },
         }));
-        const sig = await this.provider.sendAndConfirm(tx);
+        let sig;
+        if (owner.publicKey.toString() === this.provider.wallet.publicKey.toString()) {
+            sig = await this.provider.sendAndConfirm(tx);
+        }
+        else {
+            sig = await this.provider.sendAndConfirm(tx, [owner]);
+        }
         return sig;
     }
-    async applyListingSync(syncData, catalog) {
+    async applyListingSync(syncData, catalog, owner, feePayer) {
         //console.log(syncData)
         const baseUrl = this.baseUrl + '/api/catalog/listing/';
+        var listingsAdded = [];
+        var listingsRemoved = [];
         for (var i = 0; i < syncData.listing_add.length; i++) {
             const listing = syncData.listing_add[i];
             //console.log('Add')
@@ -351,33 +359,50 @@ export class ListingClient {
                 detail: JSON.stringify(listing.detail),
                 attributes: listing.attributes,
                 locality: locality,
-                owner: this.provider.wallet.publicKey,
+                owner: owner.publicKey,
             });
-            const linst = await this.getListingInstructions(lspec, this.provider.wallet.publicKey, catalog);
-            const sigs = await this.sendListingInstructions(linst);
-            sigs.forEach(sig => console.log('Added: ' + sig));
+            const linst = await this.getListingInstructions(lspec, feePayer.publicKey, catalog);
+            const sigs = await this.sendListingInstructions(linst, owner, feePayer);
+            sigs.forEach(sig => listingsAdded.push(sig));
         }
         if (syncData.listing_remove.length > 0) {
             const root = await this.getCatalogRootData();
             for (var j = 0; j < syncData.listing_remove.length; j++) {
                 const account = syncData.listing_remove[j];
-                const sig = await this.removeListing(root, account, this.provider.wallet.publicKey);
-                console.log('Removed: ' + account + ' ' + sig);
+                const sig = await this.removeListing(root, account, owner, feePayer);
+                listingsRemoved.push(sig);
             }
         }
-        return true;
+        return { listingsAdded, listingsRemoved };
     }
-    async sendListingInstructions(li) {
+    async sendListingInstructions(li, owner, feePayer) {
         var res = [];
+        var signers = [];
+        if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
+            signers.push(owner);
+        }
+        if (feePayer.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
+            signers.push(feePayer);
+        }
         for (var i = 0; i < li.urlEntries.length; i++) {
             const entryInst = li.urlEntries[i];
             var tx = new Transaction();
             if (entryInst.instruction) {
                 tx.add(entryInst.instruction);
-                res.push(await this.provider.sendAndConfirm(tx));
+                if (signers.length > 0) {
+                    res.push(await this.provider.sendAndConfirm(tx, signers));
+                }
+                else {
+                    res.push(await this.provider.sendAndConfirm(tx));
+                }
             }
         }
-        res.push(await this.provider.sendAndConfirm(li.transaction));
+        if (signers.length > 0) {
+            res.push(await this.provider.sendAndConfirm(li.transaction, signers));
+        }
+        else {
+            res.push(await this.provider.sendAndConfirm(li.transaction));
+        }
         return res;
     }
     async storeRecord(user, record, data) {
@@ -413,14 +438,14 @@ export class ListingClient {
         };
         return await postJson(url, postData);
     }
-    async syncListings(catalog = 'commerce') {
+    async syncListings(owner, feePayer, catalog = 'commerce') {
         const url = this.baseUrl + '/api/catalog/listing';
         const postData = {
             'command': 'sync_listings',
             'catalog': catalog,
         };
         const syncData = await postJson(url, postData, this.accessToken);
-        return await this.applyListingSync(syncData, catalog);
+        return await this.applyListingSync(syncData, catalog, owner, feePayer);
     }
     async getToken() {
         const url = this.authUrl + '/api/auth_gateway/v1/get_token';
