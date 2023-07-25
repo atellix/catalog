@@ -1,4 +1,4 @@
-import { PublicKey, Transaction, TransactionInstruction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js'
+import { PublicKey, Keypair, Transaction, TransactionInstruction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js'
 import { v4 as uuidv4, parse as uuidparse, stringify as uuidstr } from 'uuid'
 import { BN, AnchorProvider, Program } from '@coral-xyz/anchor'
 import { JsonLdParser } from 'jsonld-streaming-parser'
@@ -79,6 +79,11 @@ export interface ListingSyncData {
     result: string
     listing_add: Array<ListingAddData>,
     listing_remove: string[],
+}
+
+export interface ListingSyncResult {
+    listingsAdded: string[],
+    listingsRemoved: string[],
 }
 
 export interface CatalogRootData {
@@ -419,7 +424,7 @@ export class ListingClient {
         }
     }
 
-    async removeListing (programRoot: CatalogRootData, listing: string, user: PublicKey): Promise<string> {
+    async removeListing (programRoot: CatalogRootData, listing: string, owner: Keypair, feeRecipient: Keypair): Promise<string> {
         const listingPK = new PublicKey(listing)
         const listingData = await this.catalogProgram.account.catalogEntry.fetch(listingPK)
         var catBuf = Buffer.alloc(8)
@@ -434,21 +439,28 @@ export class ListingClient {
                 'accounts': {
                     rootData: programRoot.rootData,
                     authData: programRoot.authData,
-                    authUser: user,
+                    authUser: owner.publicKey,
                     catalog: catalogPK,
                     listing: listingPK,
-                    feeRecipient: user,
+                    feeRecipient: feeRecipient.publicKey,
                     systemProgram: SystemProgram.programId,
                 },
             },
         ))
-        const sig = await this.provider.sendAndConfirm(tx)
+        let sig
+        if (owner.publicKey.toString() === this.provider.wallet.publicKey.toString()) {
+            sig = await this.provider.sendAndConfirm(tx)
+        } else {
+            sig = await this.provider.sendAndConfirm(tx, [owner])
+        }
         return sig
     }
 
-    async applyListingSync (syncData: ListingSyncData, catalog: string): Promise<boolean> {
+    async applyListingSync (syncData: ListingSyncData, catalog: string, owner: Keypair, feePayer: Keypair): Promise<ListingSyncResult> {
         //console.log(syncData)
         const baseUrl: string = this.baseUrl + '/api/catalog/listing/'
+        var listingsAdded: string[] = []
+        var listingsRemoved: string[] = []
         for (var i = 0; i < syncData.listing_add.length; i++) {
             const listing: ListingAddData = syncData.listing_add[i]
             //console.log('Add')
@@ -471,34 +483,49 @@ export class ListingClient {
                 detail: JSON.stringify(listing.detail),
                 attributes: listing.attributes,
                 locality: locality,
-                owner: this.provider.wallet.publicKey,
+                owner: owner.publicKey,
             })
-            const linst = await this.getListingInstructions(lspec, this.provider.wallet.publicKey, catalog)
-            const sigs: string[] = await this.sendListingInstructions(linst)
-            sigs.forEach(sig => console.log('Added: ' + sig))
+            const linst = await this.getListingInstructions(lspec, feePayer.publicKey, catalog)
+            const sigs: string[] = await this.sendListingInstructions(linst, owner, feePayer)
+            sigs.forEach(sig => listingsAdded.push(sig))
         }
         if (syncData.listing_remove.length > 0) {
             const root = await this.getCatalogRootData()
             for (var j = 0; j < syncData.listing_remove.length; j++) {
                 const account: string = syncData.listing_remove[j]
-                const sig: string = await this.removeListing(root, account, this.provider.wallet.publicKey)
-                console.log('Removed: ' + account + ' ' + sig)
+                const sig: string = await this.removeListing(root, account, owner, feePayer)
+                listingsRemoved.push(sig)
             }
         }
-        return true
+        return { listingsAdded, listingsRemoved }
     }
 
-    async sendListingInstructions (li: ListingInstructions): Promise<string[]> {
+    async sendListingInstructions (li: ListingInstructions, owner: Keypair, feePayer: Keypair): Promise<string[]> {
         var res: string[] = []
+        var signers: any[] = []
+        if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
+            signers.push(owner)
+        }
+        if (feePayer.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
+            signers.push(feePayer)
+        }
         for (var i = 0; i < li.urlEntries.length; i++) {
             const entryInst: URLEntryInstruction = li.urlEntries[i]
             var tx = new Transaction()
             if (entryInst.instruction) {
                 tx.add(entryInst.instruction)
-                res.push(await this.provider.sendAndConfirm(tx))
+                if (signers.length > 0) {
+                    res.push(await this.provider.sendAndConfirm(tx, signers))
+                } else {
+                    res.push(await this.provider.sendAndConfirm(tx))
+                }
             }
         }
-        res.push(await this.provider.sendAndConfirm(li.transaction))
+        if (signers.length > 0) {
+            res.push(await this.provider.sendAndConfirm(li.transaction, signers))
+        } else {
+            res.push(await this.provider.sendAndConfirm(li.transaction))
+        }
         return res
     }
 
@@ -538,14 +565,14 @@ export class ListingClient {
         return await postJson(url, postData)
     }
 
-    async syncListings (catalog: string = 'commerce'): Promise<boolean> {
+    async syncListings (owner: Keypair, feePayer: Keypair, catalog: string = 'commerce'): Promise<ListingSyncResult> {
         const url = this.baseUrl + '/api/catalog/listing'
         const postData: any = {
             'command': 'sync_listings',
             'catalog': catalog,
         }
         const syncData: ListingSyncData = await postJson(url, postData, this.accessToken) as ListingSyncData
-        return await this.applyListingSync(syncData, catalog)
+        return await this.applyListingSync(syncData, catalog, owner, feePayer)
     }
 
     async getToken (): Promise<string> {
