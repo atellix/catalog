@@ -505,9 +505,6 @@ export class ListingClient {
     async sendListingInstructions (li: ListingInstructions, owner: Keypair, feePayer: Keypair): Promise<string[]> {
         var res: string[] = []
         var signers: any[] = []
-        if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
-            signers.push(owner)
-        }
         if (feePayer.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
             signers.push(feePayer)
         }
@@ -522,6 +519,9 @@ export class ListingClient {
                     res.push(await this.provider.sendAndConfirm(tx))
                 }
             }
+        }
+        if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
+            signers.push(owner)
         }
         if (signers.length > 0) {
             res.push(await this.provider.sendAndConfirm(li.transaction, signers))
