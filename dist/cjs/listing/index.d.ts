@@ -83,10 +83,10 @@ export declare class ListingClient {
     constructor(provider: AnchorProvider, catalogProgram: Program, baseUrl: string | undefined, authUrl: string | undefined, apiKey: string | undefined);
     getListings(catalog: number, categoryUri: string): string;
     getURLEntry(url: string, expandMode?: number): Promise<PublicKey>;
-    getURLEntryInstruction(entry: URLEntry, feePayer: PublicKey): Promise<URLEntryInstruction>;
+    getURLEntryInstruction(entry: URLEntry, feePayer: Keypair): Promise<URLEntryInstruction>;
     writeAttributes(attrs: any): number;
     getListingSpec(listingData: ListingData): ListingSpec;
-    getListingInstructions(listingSpec: ListingSpec, feePayer: PublicKey, catalog: string): Promise<ListingInstructions>;
+    getListingInstructions(listingSpec: ListingSpec, owner: Keypair, feePayer: Keypair, catalog: string): Promise<ListingInstructions>;
     getCatalogRootData(): Promise<CatalogRootData>;
     removeListing(programRoot: CatalogRootData, listing: string, owner: Keypair, feeRecipient: Keypair): Promise<string>;
     applyListingSync(syncData: ListingSyncData, catalog: string, owner: Keypair, feePayer: Keypair): Promise<ListingSyncResult>;

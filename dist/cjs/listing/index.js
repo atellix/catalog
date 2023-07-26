@@ -159,10 +159,11 @@ class ListingClient {
             instruction: this.catalogProgram.instruction.createUrl(entry.expand, // URL Mode
             getHashBN(entry.text), entry.text.length, entry.text, {
                 'accounts': {
-                    admin: feePayer,
+                    admin: feePayer.publicKey,
                     urlEntry: urlEntry,
                     systemProgram: web3_js_1.SystemProgram.programId,
                 },
+                'signers': [feePayer],
             })
         };
     }
@@ -228,7 +229,7 @@ class ListingClient {
         };
         return spec;
     }
-    async getListingInstructions(listingSpec, feePayer, catalog) {
+    async getListingInstructions(listingSpec, owner, feePayer, catalog) {
         var _a;
         var listingPost = { ...listingSpec };
         listingPost.command = 'sign_listing';
@@ -251,7 +252,7 @@ class ListingClient {
         const listingPK = listingAddr[0];
         const signerPK = new web3_js_1.PublicKey(signedResult.pubkey);
         const feeMintPK = new web3_js_1.PublicKey(signedResult.fee_mint);
-        const feeAccountAddr = await web3_js_1.PublicKey.findProgramAddress([feePayer.toBuffer(), spl_token_1.TOKEN_PROGRAM_ID.toBuffer(), feeMintPK.toBuffer()], spl_token_1.ASSOCIATED_TOKEN_PROGRAM_ID);
+        const feeAccountAddr = await web3_js_1.PublicKey.findProgramAddress([feePayer.publicKey.toBuffer(), spl_token_1.TOKEN_PROGRAM_ID.toBuffer(), feeMintPK.toBuffer()], spl_token_1.ASSOCIATED_TOKEN_PROGRAM_ID);
         const feeSourcePK = feeAccountAddr[0];
         var tx = new web3_js_1.Transaction();
         tx.add(web3_js_1.Ed25519Program.createInstructionWithPublicKey({
@@ -275,13 +276,14 @@ class ListingClient {
                 owner: listingSpec.owner,
                 catalog: catalogPK,
                 listing: listingPK,
-                feePayer: feePayer,
+                feePayer: feePayer.publicKey,
                 feeSource: feeSourcePK,
                 feeAccount: new web3_js_1.PublicKey(signedResult.fee_account),
                 ixSysvar: web3_js_1.SYSVAR_INSTRUCTIONS_PUBKEY,
                 systemProgram: web3_js_1.SystemProgram.programId,
                 tokenProgram: spl_token_1.TOKEN_PROGRAM_ID,
             },
+            'signers': [owner, feePayer],
         }));
         var entries = [];
         var listing_url = await this.getURLEntryInstruction(listingSpec.listing_url, feePayer);
@@ -370,7 +372,7 @@ class ListingClient {
                 locality: locality,
                 owner: owner.publicKey,
             });
-            const linst = await this.getListingInstructions(lspec, feePayer.publicKey, catalog);
+            const linst = await this.getListingInstructions(lspec, owner, feePayer, catalog);
             const sigs = await this.sendListingInstructions(linst, owner, feePayer);
             sigs.forEach(sig => listingsAdded.push(sig));
         }
@@ -454,7 +456,6 @@ class ListingClient {
             'catalog': catalog,
         };
         const syncData = await postJson(url, postData, this.accessToken);
-        console.log(syncData);
         return await this.applyListingSync(syncData, catalog, owner, feePayer);
     }
     async getToken() {

@@ -238,7 +238,7 @@ export class ListingClient {
         return addr[0]
     }
 
-    async getURLEntryInstruction(entry: URLEntry, feePayer: PublicKey): Promise<URLEntryInstruction> {
+    async getURLEntryInstruction(entry: URLEntry, feePayer: Keypair): Promise<URLEntryInstruction> {
         const urlEntry = await this.getURLEntry(entry.text, entry.expand)
         let account = await this.provider.connection.getAccountInfo(urlEntry)
         if (account) {
@@ -259,10 +259,11 @@ export class ListingClient {
                 entry.text,
                 {
                     'accounts': {
-                        admin: feePayer,
+                        admin: feePayer.publicKey,
                         urlEntry: urlEntry,
                         systemProgram: SystemProgram.programId,
                     },
+                    'signers': [feePayer],
                 },
             )
         }
@@ -331,7 +332,7 @@ export class ListingClient {
         return spec
     }
 
-    async getListingInstructions (listingSpec: ListingSpec, feePayer: PublicKey, catalog: string): Promise<ListingInstructions> {
+    async getListingInstructions (listingSpec: ListingSpec, owner: Keypair, feePayer: Keypair, catalog: string): Promise<ListingInstructions> {
         var listingPost: any = { ...listingSpec }
         listingPost.command = 'sign_listing'
         listingPost.catalog = catalog
@@ -354,7 +355,7 @@ export class ListingClient {
         const signerPK = new PublicKey(signedResult.pubkey)
         const feeMintPK = new PublicKey(signedResult.fee_mint)
         const feeAccountAddr = await PublicKey.findProgramAddress(
-            [feePayer.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), feeMintPK.toBuffer()], ASSOCIATED_TOKEN_PROGRAM_ID
+            [feePayer.publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), feeMintPK.toBuffer()], ASSOCIATED_TOKEN_PROGRAM_ID
         )
         const feeSourcePK = feeAccountAddr[0]
         var tx = new Transaction()
@@ -381,13 +382,14 @@ export class ListingClient {
                     owner: listingSpec.owner,
                     catalog: catalogPK,
                     listing: listingPK,
-                    feePayer: feePayer,
+                    feePayer: feePayer.publicKey,
                     feeSource: feeSourcePK,
                     feeAccount: new PublicKey(signedResult.fee_account),
                     ixSysvar: SYSVAR_INSTRUCTIONS_PUBKEY,
                     systemProgram: SystemProgram.programId,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 },
+                'signers': [owner, feePayer],
             },
         ))
         var entries: URLEntryInstruction[] = []
@@ -485,7 +487,7 @@ export class ListingClient {
                 locality: locality,
                 owner: owner.publicKey,
             })
-            const linst = await this.getListingInstructions(lspec, feePayer.publicKey, catalog)
+            const linst = await this.getListingInstructions(lspec, owner, feePayer, catalog)
             const sigs: string[] = await this.sendListingInstructions(linst, owner, feePayer)
             sigs.forEach(sig => listingsAdded.push(sig))
         }
@@ -572,7 +574,6 @@ export class ListingClient {
             'catalog': catalog,
         }
         const syncData: ListingSyncData = await postJson(url, postData, this.accessToken) as ListingSyncData
-        console.log(syncData)
         return await this.applyListingSync(syncData, catalog, owner, feePayer)
     }
 
