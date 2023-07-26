@@ -572,6 +572,7 @@ export class ListingClient {
             'catalog': catalog,
         }
         const syncData: ListingSyncData = await postJson(url, postData, this.accessToken) as ListingSyncData
+        console.log(syncData)
         return await this.applyListingSync(syncData, catalog, owner, feePayer)
     }
 

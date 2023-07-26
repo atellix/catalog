@@ -445,6 +445,7 @@ export class ListingClient {
             'catalog': catalog,
         };
         const syncData = await postJson(url, postData, this.accessToken);
+        console.log(syncData);
         return await this.applyListingSync(syncData, catalog, owner, feePayer);
     }
     async getToken() {
