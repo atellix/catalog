@@ -408,7 +408,7 @@ class ListingClient {
         if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
             signers.push(owner);
         }
-        await this.provider.connection.getLatestBlockhash();
+        li.transaction.recentBlockhash = (await this.provider.connection.getLatestBlockhash()).blockhash;
         if (signers.length > 0) {
             res.push(await this.provider.sendAndConfirm(li.transaction, signers, { 'maxRetries': 10, 'skipPreflight': true }));
         }
