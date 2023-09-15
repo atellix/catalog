@@ -526,7 +526,7 @@ export class ListingClient {
         if (signers.length > 0) {
             res.push(await this.provider.sendAndConfirm(li.transaction, signers, {'maxRetries': 10, 'skipPreflight': true}))
         } else {
-            res.push(await this.provider.sendAndConfirm(li.transaction, {'maxRetries': 10, 'skipPreflight': true}))
+            res.push(await this.provider.sendAndConfirm(li.transaction, [], {'maxRetries': 10, 'skipPreflight': true}))
         }
         return res
     }

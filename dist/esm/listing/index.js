@@ -400,10 +400,10 @@ export class ListingClient {
             signers.push(owner);
         }
         if (signers.length > 0) {
-            res.push(await this.provider.sendAndConfirm(li.transaction, signers));
+            res.push(await this.provider.sendAndConfirm(li.transaction, signers, { 'maxRetries': 10, 'skipPreflight': true }));
         }
         else {
-            res.push(await this.provider.sendAndConfirm(li.transaction));
+            res.push(await this.provider.sendAndConfirm(li.transaction, [], { 'maxRetries': 10, 'skipPreflight': true }));
         }
         return res;
     }
