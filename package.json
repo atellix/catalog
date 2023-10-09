@@ -1,7 +1,11 @@
 {
   "name": "@atellix/catalog",
   "version": "1.0.0",
-  "description": "Atellix Catalog client",
+  "description": "Atellix Catalog API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atellix/catalog.git"
+  },
   "module": "./dist/esm/index.js",
   "main": "./dist/cjs/index.js",
   "browser": "./dist/browser/index.js",
@@ -14,7 +18,7 @@
     "lint": "prettier src/** tests/** --check",
     "watch": "tsc -p tsconfig.cjs.json --watch",
     "prepublishOnly": "yarn build",
-    "docs": "typedoc --excludePrivate --includeVersion --out ../../../docs/src/.vuepress/dist/ts/ --readme none src/index.ts",
+    "docs": "typedoc --excludePrivate --includeVersion --categorizeByGroup --defaultCategory Catalog --out docs --readme none src/index.ts",
     "test": "jest tests --detectOpenHandles"
   },
   "publishConfig": {
@@ -25,20 +29,27 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.27.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
     "@rdfjs/types": "^1.1.0",
     "@solana/spl-token": "^0.3.7",
     "@types/node": "^18.15.11",
+    "awesome-graphql-client": "^1.0.0",
     "base-64": "^1.0.0",
     "base32.js": "^0.1.0",
     "base64-js": "^1.5.1",
+    "bigint-buffer": "^1.1.5",
     "bitset": "^5.1.1",
     "bn.js": "^5.2.1",
     "bs58": "^5.0.0",
     "buffer-layout": "^1.2.2",
     "cross-fetch": "^3.1.5",
+    "form-data": "^4.0.0",
+    "jose": "^4.14.6",
+    "js-base64": "^3.7.5",
     "jsonld": "^8.1.0",
     "jsonld-streaming-parser": "^3.2.0",
     "jssha": "^3.3.0",
+    "mathjs": "^11.11.1",
     "n3": "^1.16.4",
     "readable-stream": "^4.3.0",
     "stream-chunks": "^1.0.0",
@@ -67,7 +78,7 @@
     "ts-jest-resolver": "^2.0.1",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typedoc": "^0.24.4",
+    "typedoc": "^0.24.8",
     "typescript": "^5.0.4"
   },
   "files": [

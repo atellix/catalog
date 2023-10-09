@@ -1,0 +1,12 @@
+{
+  "name": "gen",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@rdfjs/data-model": "^2.0.1",
+    "@rdfjs/types": "^1.1.0",
+    "@types/rdfjs__data-model": "^2.0.3",
+    "n3": "^1.16.4"
+  }
+}

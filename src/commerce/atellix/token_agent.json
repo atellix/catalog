@@ -1,0 +1,1048 @@
+{
+  "version": "0.1.0",
+  "name": "token_agent",
+  "instructions": [
+    {
+      "name": "storeMetadata",
+      "accounts": [
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programData",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programAdmin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "programInfo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "inpProgramName",
+          "type": "string"
+        },
+        {
+          "name": "inpDeveloperName",
+          "type": "string"
+        },
+        {
+          "name": "inpDeveloperUrl",
+          "type": "string"
+        },
+        {
+          "name": "inpSourceUrl",
+          "type": "string"
+        },
+        {
+          "name": "inpVerifyUrl",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "subscribe",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "netAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rootKey",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "merchantApproval",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "merchantToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerApproval",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userKey",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "feesAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegateProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateRoot",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "allowance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "inpLinkToken",
+          "type": "bool"
+        },
+        {
+          "name": "inpInitialAmount",
+          "type": "u64"
+        },
+        {
+          "name": "inpDestNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpRootNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSubscrId",
+          "type": "u128"
+        },
+        {
+          "name": "inpPaymentId",
+          "type": "u128"
+        },
+        {
+          "name": "inpPeriod",
+          "type": "u8"
+        },
+        {
+          "name": "inpPeriodBudget",
+          "type": "u64"
+        },
+        {
+          "name": "inpUseTotal",
+          "type": "bool"
+        },
+        {
+          "name": "inpTotalBudget",
+          "type": "u64"
+        },
+        {
+          "name": "inpNextRebill",
+          "type": "i64"
+        },
+        {
+          "name": "inpRebillMax",
+          "type": "u32"
+        },
+        {
+          "name": "inpNotValidBefore",
+          "type": "i64"
+        },
+        {
+          "name": "inpNotValidAfter",
+          "type": "i64"
+        },
+        {
+          "name": "inpMaxDelay",
+          "type": "i64"
+        },
+        {
+          "name": "inpSwap",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapDirection",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapMode",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDataNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapInbNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapOutNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDstNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "updateSubscription",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "netAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rootKey",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "merchantApproval",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "merchantToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerApproval",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userKey",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "feesAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegateProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateRoot",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "allowance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "inpDestNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpRootNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpActive",
+          "type": "bool"
+        },
+        {
+          "name": "inpLinkToken",
+          "type": "bool"
+        },
+        {
+          "name": "inpAmount",
+          "type": "u64"
+        },
+        {
+          "name": "inpPaymentId",
+          "type": "u128"
+        },
+        {
+          "name": "inpNextRebill",
+          "type": "i64"
+        },
+        {
+          "name": "inpPeriod",
+          "type": "u8"
+        },
+        {
+          "name": "inpPeriodBudget",
+          "type": "u64"
+        },
+        {
+          "name": "inpMaxDelay",
+          "type": "i64"
+        },
+        {
+          "name": "inpNotValidBefore",
+          "type": "i64"
+        },
+        {
+          "name": "inpNotValidAfter",
+          "type": "i64"
+        },
+        {
+          "name": "inpSwap",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapDirection",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapMode",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDataNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapInbNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapOutNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDstNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "closeSubscription",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userKey",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "feeRecipient",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "updateManager",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerPrev",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "managerKey",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "managerApproval",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "managerCancel",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerKey",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "managerApproval",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "process",
+      "accounts": [
+        {
+          "name": "subscrData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "netAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rootKey",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "merchantApproval",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "merchantToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "managerKey",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "managerApproval",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "feesAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "delegateProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "delegateRoot",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "allowance",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "inpDestNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpRootNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpRebillTs",
+          "type": "i64"
+        },
+        {
+          "name": "inpRebillStr",
+          "type": "string"
+        },
+        {
+          "name": "inpNextRebill",
+          "type": "i64"
+        },
+        {
+          "name": "inpAmount",
+          "type": "u64"
+        },
+        {
+          "name": "inpPaymentId",
+          "type": "u128"
+        },
+        {
+          "name": "inpSwapDataNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapInbNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapOutNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapEstimate",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "merchantPayment",
+      "accounts": [
+        {
+          "name": "netAuth",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rootKey",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "merchantApproval",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "merchantToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userKey",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "feesAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "inpDestNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpRootNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpPaymentId",
+          "type": "u128"
+        },
+        {
+          "name": "inpAmount",
+          "type": "u64"
+        },
+        {
+          "name": "inpSwap",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapDirection",
+          "type": "bool"
+        },
+        {
+          "name": "inpSwapMode",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDataNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapInbNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapOutNonce",
+          "type": "u8"
+        },
+        {
+          "name": "inpSwapDstNonce",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "SubscrData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "userKey",
+            "type": "publicKey"
+          },
+          {
+            "name": "approvalProgram",
+            "type": "publicKey"
+          },
+          {
+            "name": "merchantKey",
+            "type": "publicKey"
+          },
+          {
+            "name": "merchantApproval",
+            "type": "publicKey"
+          },
+          {
+            "name": "managerKey",
+            "type": "publicKey"
+          },
+          {
+            "name": "managerApproval",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "swapAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "subscrId",
+            "type": "u128"
+          },
+          {
+            "name": "rebillEvents",
+            "type": "u32"
+          },
+          {
+            "name": "rebillMax",
+            "type": "u32"
+          },
+          {
+            "name": "nextRebill",
+            "type": "i64"
+          },
+          {
+            "name": "notValidBefore",
+            "type": "i64"
+          },
+          {
+            "name": "notValidAfter",
+            "type": "i64"
+          },
+          {
+            "name": "maxDelay",
+            "type": "i64"
+          },
+          {
+            "name": "period",
+            "type": "u8"
+          },
+          {
+            "name": "periodBudget",
+            "type": "u64"
+          },
+          {
+            "name": "useTotal",
+            "type": "bool"
+          },
+          {
+            "name": "totalBudget",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "swap",
+            "type": "bool"
+          },
+          {
+            "name": "swapDirection",
+            "type": "bool"
+          },
+          {
+            "name": "swapMode",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProgramMetadata",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "semvarMajor",
+            "type": "u32"
+          },
+          {
+            "name": "semvarMinor",
+            "type": "u32"
+          },
+          {
+            "name": "semvarPatch",
+            "type": "u32"
+          },
+          {
+            "name": "program",
+            "type": "publicKey"
+          },
+          {
+            "name": "programName",
+            "type": "string"
+          },
+          {
+            "name": "developerName",
+            "type": "string"
+          },
+          {
+            "name": "developerUrl",
+            "type": "string"
+          },
+          {
+            "name": "sourceUrl",
+            "type": "string"
+          },
+          {
+            "name": "verifyUrl",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "SubscriptionPeriod",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Daily"
+          },
+          {
+            "name": "Weekly"
+          },
+          {
+            "name": "Monthly"
+          },
+          {
+            "name": "Quarterly"
+          },
+          {
+            "name": "Yearly"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "AtxSwapContractV1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ErrorCode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "InactiveSubscription"
+          },
+          {
+            "name": "InvalidProgramId"
+          },
+          {
+            "name": "InvalidSubscriptionPeriod"
+          },
+          {
+            "name": "InvalidDerivedAccount"
+          },
+          {
+            "name": "InvalidTimeframe"
+          },
+          {
+            "name": "InvalidSwapMode"
+          },
+          {
+            "name": "InvalidAccount"
+          },
+          {
+            "name": "InvalidNonce"
+          },
+          {
+            "name": "NotApproved"
+          },
+          {
+            "name": "TotalBudgetExceeded"
+          },
+          {
+            "name": "PeriodBudgetExceeded"
+          },
+          {
+            "name": "AccessDenied"
+          },
+          {
+            "name": "NotValidYet"
+          },
+          {
+            "name": "Expired"
+          },
+          {
+            "name": "MaxRebills"
+          },
+          {
+            "name": "Overflow"
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "SubscrEvent",
+      "fields": [
+        {
+          "name": "eventHash",
+          "type": "u128",
+          "index": false
+        },
+        {
+          "name": "slot",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "merchantTxId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "merchantKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "merchantToken",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "destAccount",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "subscrData",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "subscrId",
+          "type": "u128",
+          "index": false
+        },
+        {
+          "name": "paymentId",
+          "type": "u128",
+          "index": false
+        },
+        {
+          "name": "rebillEvent",
+          "type": "u32",
+          "index": false
+        },
+        {
+          "name": "total",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "fees",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "nextRebill",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "swap",
+          "type": "bool",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PaymentEvent",
+      "fields": [
+        {
+          "name": "eventHash",
+          "type": "u128",
+          "index": false
+        },
+        {
+          "name": "slot",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "merchantTxId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "merchantKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "merchantToken",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "destAccount",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "paymentId",
+          "type": "u128",
+          "index": false
+        },
+        {
+          "name": "total",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "fees",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "swap",
+          "type": "bool",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "address": "AGNTcdPiqzTvTczVNihCFQAoaT6Q6xqrtRMWkExyHCdm"
+  }
+}

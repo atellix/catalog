@@ -1,4 +1,4 @@
-import { PublicKey, Keypair, Transaction, TransactionInstruction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js'
+import { GetProgramAccountsFilter, PublicKey, Keypair, Transaction, TransactionInstruction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js'
 import { v4 as uuidv4, parse as uuidparse, stringify as uuidstr } from 'uuid'
 import { BN, AnchorProvider, Program } from '@coral-xyz/anchor'
 import { JsonLdParser } from 'jsonld-streaming-parser'
@@ -15,6 +15,44 @@ import bs58 from 'bs58'
 import N3 from 'n3'
 
 import { SerializerJsonld } from './serializer.js'
+
+export const ATELLIX_CATALOG = {
+    'metadata': 0,
+    'public': 1,
+    'commerce': 2,
+    'event': 3,
+    'realestate': 4,
+    'investment': 5,
+    'employment': 6,
+}
+
+export const ATELLIX_CATALOG_ID = {
+    '0': 'metadata',
+    '1': 'public',
+    '2': 'commerce',
+    '3': 'event',
+    '4': 'realestate',
+    '5': 'investment',
+    '6': 'employment',
+}
+
+export interface Listing {
+    catalog: string,
+    listing_account: string,
+    listing_index: number,
+    category: string,
+    locality: string[],
+    url: string,
+    uuid: string,
+    label: string,
+    detail: string,
+    latitude?: number,
+    longitude?: number,
+    owner: string,
+    attributes: any,
+    update_count: number,
+    update_ts: Date,
+}
 
 export interface ListingData {
     catalog: string,
@@ -56,6 +94,41 @@ export interface URLEntryInstruction {
     instruction?: TransactionInstruction,
 }
 
+export interface ListingQuery {
+    catalog: string,
+    category?: string,
+    source?: 'solana' | 'catalog',
+    take?: number,
+    skip?: number,
+}
+
+export interface ListingQueryResult {
+    count: number,
+    listings: Listing[],
+}
+
+export interface ListingResult {
+    result: string,
+    error?: string,
+    count: number,
+    listings: any[],
+}
+
+export interface ListingEntriesQuery {
+    url: string,
+    take?: number,
+    skip?: number,
+    sort?: 'price' | 'name',
+    reverse?: boolean,
+}
+
+export interface ListingEntriesResult {
+    result: string,
+    error?: string,
+    count: number,
+    entries: any[],
+}
+
 export interface ListingInstructions {
     uuid: string,
     catalog: number,
@@ -92,13 +165,60 @@ export interface CatalogRootData {
 }
 
 export interface AccessTokenData {
-    access_token: string
+    access_token: string,
+}
+
+export interface ListingCategoryURL {
+    url: string,
+}
+
+export interface CategoryTreePath {
+    key: string,
+    name: string,
+}
+
+export interface CategoryTreeNode {
+    url: string,
+    name?: string,
+    slug?: string,
+    path?: CategoryTreePath[],
+    parent?: string,
+    subcategories?: CategoryTreeNode[],
+    listing_categories?: ListingCategoryURL[],
+}
+
+export interface GetCategortListRequest {
+    tree?: string,
+    base?: string,
+    depth?: number,
+}
+
+export interface GetCategortListResult {
+    categories: CategoryTreeNode[],
+    result: string,
+    error?: string,
+}
+
+export interface SearchRequest {
+    query: string,
+    take?: number,
+    skip?: number,
+    catalog?: string,
+    category?: string,
+}
+
+export interface SearchResult {
+    result: string,
+    error?: string,
+    count: number,
+    entries: any[],
 }
 
 export const listingAttributes: string[] = [
     'InPerson',
     'LocalDelivery',
     'OnlineDownload',
+    'RequestForProposal',
 ]
 
 function getLonLatString (latlon: number): string {
@@ -125,6 +245,18 @@ async function decodeURL (catalogProgram, listingData, urlEntry) {
         const decoded = decodeURIComponent(url)
         return decoded
     }
+}
+
+function readAttributes(attrValue) {
+    var hval = attrValue.toString(16)
+    var bset = new BitSet('0x' + hval)
+    var attrs = {}
+    for (var i = 0; i < listingAttributes.length; i++) {
+        if (bset.get(i)) {
+            attrs[listingAttributes[i]] = true
+        }
+    }
+    return attrs
 }
 
 export function postJson (url: string, jsonData: any, token: string | undefined = undefined): Promise<any> {
@@ -211,21 +343,149 @@ export class ListingClient {
     // Catalog ID Offset = 24
     // Category Offset = 32
     // Filter By Offset = 48
-    getListings (catalog: number, categoryUri: string): string {
-        const category = getHashBN(categoryUri)
-        const offset = 24
-        const catbuf = Buffer.alloc(8)
-        catbuf.writeBigUInt64LE(BigInt(catalog))
-        var prefix: Array<number> = []
-        prefix = prefix.concat(catbuf.toJSON().data)
+    async getListings (query: ListingQuery): Promise<ListingQueryResult> {
+        if (!(query.catalog in ATELLIX_CATALOG)) {
+            throw new Error('Invalid catalog: ' + query.catalog)
+        }
+        var listings: Listing[] = []
+        var source = query.source ?? 'catalog'
+        var count
+        if (source === 'catalog') {
+            const url = this.baseUrl + '/api/catalog/query'
+            const params: any = {
+                'command': 'get_listings',
+                'catalog': ATELLIX_CATALOG[query.catalog],
+            }
+            if (query.category) {
+                params['category'] = query.category
+            }
+            if (query.skip) {
+                params['skip'] = query.skip
+            }
+            if (query.take) {
+                params['take'] = query.take
+            }
+            const result = await postJson(url, params) as ListingResult
+            if (result.result !== 'ok') {
+                throw new Error(result.error ?? 'Request error')
+            }
+            count = result.count
+            listings = result.listings
+        } else if (source === 'solana') {
+            const listingPrefix: Array<number> = [0x27, 0xea, 0xf9, 0x5e, 0x28, 0x32, 0xf4, 0x49]
+            const catbuf = Buffer.alloc(8)
+            catbuf.writeBigUInt64LE(BigInt(query.catalog))
+            var prefix: number[] = catbuf.toJSON().data
+            var filters: GetProgramAccountsFilter[] = [
+                { memcmp: { bytes: bs58.encode(listingPrefix), offset: 0 } },
+                { memcmp: { bytes: bs58.encode(prefix), offset: 24 } },
+            ]
+            if (query.category) {
+                const category = getHashBN(query.category)
+                var catdata: Array<number> = category.toBuffer().toJSON().data
+                catdata.reverse() // Borsh uses little-endian integers
+                prefix = prefix.concat(catdata)
+                filters[1] = { memcmp: { bytes: bs58.encode(prefix), offset: 24 } }
+            }
+            const accountList = await this.provider.connection.getProgramAccounts(this.catalogProgram.programId, { filters: filters })
+            for (var i = 0; i < accountList.length; i++) {
+                const act = accountList[i]
+                const listingData = await this.catalogProgram.account.catalogEntry.fetch(new PublicKey(act.pubkey))
+                var locality: string[] = []
+                for (var j = 0; j < (listingData.filterBy as any[]).length; j++) {
+                    var localFilter: any = (listingData as any).filterBy[j]
+                    if (localFilter.toString() !== '0') {
+                        locality.push(await this.getURI(localFilter.toBuffer()))
+                    }
+                }
+                var listing: Listing = {
+                    'catalog': ATELLIX_CATALOG_ID[Number(query.catalog).toString()],
+                    'listing_account': act.pubkey.toString(),
+                    'listing_index': parseInt((listingData.listingIdx as BN).toString()),
+                    'category': await this.getURI((listingData.category as any).toBuffer()),
+                    'locality': locality,
+                    'url': await decodeURL(this.catalogProgram, listingData, listingData.listingUrl),
+                    'uuid': uuidstr((listingData.uuid as any).toBuffer().toJSON().data),
+                    'label': await decodeURL(this.catalogProgram, listingData, listingData.labelUrl),
+                    'detail': JSON.parse(await decodeURL(this.catalogProgram, listingData, listingData.detailUrl)),
+                    'owner': (listingData.owner as PublicKey).toString(),
+                    'attributes': readAttributes(listingData.attributes),
+                    'update_count': parseInt((listingData.updateCount as BN).toString()),
+                    'update_ts': new Date(1000 * parseInt((listingData.updateTs as BN).toString())),
+                }
+                var lat: number | null = null
+                var lon: number | null = null
+                if (Math.abs(listingData.latitude as number) < 2000000000 && Math.abs(listingData.longitude as number) < 2000000000) {
+                    listing['latitude'] = listingData.latitude as number / (10 ** 7)
+                    listing['longitude'] = listingData.longitude as number / (10 ** 7)
+                }
+                listings.push(listing)
+            }
+            count = listings.length
+        }
+        return {
+            count: count,
+            listings: listings,
+        }
+    }
 
-        // Category filter
-        const catdata = category.toBuffer().toJSON().data
-        catdata.reverse() // Borsh uses little-endian integers
-        prefix = prefix.concat(catdata)
+    async getListingEntries (query: ListingEntriesQuery): Promise<ListingEntriesResult> {
+        var params: any = { 'command': 'get_listing_entries' }
+        if (query.skip) {
+            params['skip'] = query.skip
+        }
+        if (query.take) {
+            params['take'] = query.take
+        }
+        if (query.sort) {
+            params['sort'] = query.sort
+        }
+        if (query.reverse) {
+            params['reverse'] = query.reverse
+        }
+        const result = await postJson(query.url, params) as ListingEntriesResult
+        if (result.result !== 'ok') {
+            throw new Error(result.error ?? 'Request error')
+        }
+        return result
+    }
 
-        console.log("Offset: " + offset + " Prefix: " + bs58.encode(prefix))
-        return 'OK'
+    async getCategoryList(req: GetCategortListRequest): Promise<GetCategortListResult> {
+        const url = this.baseUrl + '/api/catalog/category'
+        var params: any = {
+            'command': 'get_category_list',
+            'tree': null,
+            'base': null,
+            'depth': 1,
+        }
+        for (var k of ['tree', 'base', 'depth']) {
+            if (k in req) {
+                params[k] = req[k]
+            }
+        }
+        const result = await postJson(url, params) as GetCategortListResult
+        if (result.result !== 'ok') {
+            throw new Error(result.error ?? 'Request error')
+        }
+        return result
+    }
+
+    async search(req: SearchRequest): Promise<SearchResult> {
+        const url = this.baseUrl + '/api/catalog/search'
+        var params: any = {
+            'command': 'search',
+            'catalog': req.catalog ?? 'commerce',
+        }
+        for (var k of ['query', 'take', 'skip', 'catalog', 'category']) {
+            if (k in req) {
+                params[k] = req[k]
+            }
+        }
+        const result = await postJson(url, params) as SearchResult
+        if (result.result !== 'ok') {
+            throw new Error(result.error ?? 'Request error')
+        }
+        return result
     }
 
     async getURLEntry(url: string, expandMode: number = 0): Promise<PublicKey> {
@@ -534,42 +794,6 @@ export class ListingClient {
         return res
     }
 
-    async storeRecord (user: string, record: string, data: any): Promise<any> {
-        const url = this.baseUrl + '/api/catalog/listing'
-        const postData: any = {
-            'command': 'set_record',
-            'user': user,
-            'record': record,
-            'data': data,
-        }
-        return await postJson(url, postData)
-    }
-
-    async storeListing (user: string, record: string, catalog: number, listing: string): Promise<any> {
-        const url = this.baseUrl + '/api/catalog/listing'
-        const postData: any = {
-            'command': 'set_listing',
-            'user': user,
-            'catalog': catalog,
-            'listing': listing,
-            'record': record,
-        }
-        return await postJson(url, postData)
-    }
-
-    async storeRecordAndListing (user: string, record: string, data: any, catalog: number, listing: string): Promise<any> {
-        const url = this.baseUrl + '/api/catalog/listing'
-        const postData: any = {
-            'command': 'set_listing',
-            'user': user,
-            'catalog': catalog,
-            'listing': listing,
-            'record': record,
-            'data': data,
-        }
-        return await postJson(url, postData)
-    }
-
     async syncListings (owner: Keypair, feePayer: Keypair, catalog: string = 'commerce'): Promise<ListingSyncResult> {
         const url = this.baseUrl + '/api/catalog/listing'
         const postData: any = {
@@ -595,5 +819,16 @@ export class ListingClient {
                 .catch(error => { reject(error) })
         }) as AccessTokenData
         return accessToken.access_token
+    }
+
+    async getURI (uriData: Array<number>): Promise<string> {
+        const url = this.baseUrl + '/api/catalog/uri/' + bs58.encode(uriData)
+        const options = { method: 'GET' }
+        const uriResult: string = await new Promise((resolve, reject) => {
+            fetch(url)
+                .then(response => { resolve(response.text()) })
+                .catch(error => { reject(error) })
+        }) as string
+        return uriResult
     }
 }
