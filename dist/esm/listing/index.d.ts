@@ -1,5 +1,40 @@
 import { PublicKey, Keypair, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { AnchorProvider, Program } from '@coral-xyz/anchor';
+export declare const ATELLIX_CATALOG: {
+    metadata: number;
+    public: number;
+    commerce: number;
+    event: number;
+    realestate: number;
+    investment: number;
+    employment: number;
+};
+export declare const ATELLIX_CATALOG_ID: {
+    '0': string;
+    '1': string;
+    '2': string;
+    '3': string;
+    '4': string;
+    '5': string;
+    '6': string;
+};
+export interface Listing {
+    catalog: string;
+    listing_account: string;
+    listing_index: number;
+    category: string;
+    locality: string[];
+    url: string;
+    uuid: string;
+    label: string;
+    detail: string;
+    latitude?: number;
+    longitude?: number;
+    owner: string;
+    attributes: any;
+    update_count: number;
+    update_ts: Date;
+}
 export interface ListingData {
     catalog: string;
     base: string;
@@ -36,6 +71,36 @@ export interface URLEntryInstruction {
     publicKey: PublicKey;
     instruction?: TransactionInstruction;
 }
+export interface ListingQuery {
+    catalog: string;
+    category?: string;
+    source?: 'solana' | 'catalog';
+    take?: number;
+    skip?: number;
+}
+export interface ListingQueryResult {
+    count: number;
+    listings: Listing[];
+}
+export interface ListingResult {
+    result: string;
+    error?: string;
+    count: number;
+    listings: any[];
+}
+export interface ListingEntriesQuery {
+    url: string;
+    take?: number;
+    skip?: number;
+    sort?: 'price' | 'name';
+    reverse?: boolean;
+}
+export interface ListingEntriesResult {
+    result: string;
+    error?: string;
+    count: number;
+    entries: any[];
+}
 export interface ListingInstructions {
     uuid: string;
     catalog: number;
@@ -69,6 +134,45 @@ export interface CatalogRootData {
 export interface AccessTokenData {
     access_token: string;
 }
+export interface ListingCategoryURL {
+    url: string;
+}
+export interface CategoryTreePath {
+    key: string;
+    name: string;
+}
+export interface CategoryTreeNode {
+    url: string;
+    name?: string;
+    slug?: string;
+    path?: CategoryTreePath[];
+    parent?: string;
+    subcategories?: CategoryTreeNode[];
+    listing_categories?: ListingCategoryURL[];
+}
+export interface GetCategortListRequest {
+    tree?: string;
+    base?: string;
+    depth?: number;
+}
+export interface GetCategortListResult {
+    categories: CategoryTreeNode[];
+    result: string;
+    error?: string;
+}
+export interface SearchRequest {
+    query: string;
+    take?: number;
+    skip?: number;
+    catalog?: string;
+    category?: string;
+}
+export interface SearchResult {
+    result: string;
+    error?: string;
+    count: number;
+    entries: any[];
+}
 export declare const listingAttributes: string[];
 export declare function postJson(url: string, jsonData: any, token?: string | undefined): Promise<any>;
 export declare function graphToJsonld(store: any, baseIRI: string): Promise<string>;
@@ -81,7 +185,10 @@ export declare class ListingClient {
     private authUrl;
     private apiKey;
     constructor(provider: AnchorProvider, catalogProgram: Program, baseUrl: string | undefined, authUrl: string | undefined, apiKey: string | undefined);
-    getListings(catalog: number, categoryUri: string): string;
+    getListings(query: ListingQuery): Promise<ListingQueryResult>;
+    getListingEntries(query: ListingEntriesQuery): Promise<ListingEntriesResult>;
+    getCategoryList(req: GetCategortListRequest): Promise<GetCategortListResult>;
+    search(req: SearchRequest): Promise<SearchResult>;
     getURLEntry(url: string, expandMode?: number): Promise<PublicKey>;
     getURLEntryInstruction(entry: URLEntry, feePayer: Keypair): Promise<URLEntryInstruction>;
     writeAttributes(attrs: any): number;
@@ -91,10 +198,8 @@ export declare class ListingClient {
     removeListing(programRoot: CatalogRootData, listing: string, owner: Keypair, feeRecipient: Keypair): Promise<string>;
     applyListingSync(syncData: ListingSyncData, catalog: string, owner: Keypair, feePayer: Keypair): Promise<ListingSyncResult>;
     sendListingInstructions(li: ListingInstructions, owner: Keypair, feePayer: Keypair): Promise<string[]>;
-    storeRecord(user: string, record: string, data: any): Promise<any>;
-    storeListing(user: string, record: string, catalog: number, listing: string): Promise<any>;
-    storeRecordAndListing(user: string, record: string, data: any, catalog: number, listing: string): Promise<any>;
     syncListings(owner: Keypair, feePayer: Keypair, catalog?: string): Promise<ListingSyncResult>;
     getToken(): Promise<string>;
+    getURI(uriData: Array<number>): Promise<string>;
 }
 //# sourceMappingURL=index.d.ts.map

@@ -20,6 +20,7 @@ import bs58 from 'bs58'
 import { decodeJwt } from 'jose'
 
 import { VendureClient } from '../vendure'
+import { RequestUUID, PaymentRequest } from '../../commerce'
 
 import tokenAgentIDL from './token_agent.json'
 
@@ -40,16 +41,6 @@ function postJson (url: string, jsonData: any, apiKey: string = ''): Promise<any
             .then(json => { resolve(json) })
             .catch(error => { reject(error) })
     })
-}
-
-export interface RequestUUID {
-    uuid: string,
-}
-
-export interface PaymentRequest {
-    data: RequestUUID,
-    method: 'atellixpay',
-    total: string,
 }
 
 export interface MerchantCheckoutParams {

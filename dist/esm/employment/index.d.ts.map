@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../../src/employment/index.ts"],"names":[],"mappings":"AAkBA,qBAAa,iBAAiB;IAC1B,OAAO,CAAC,OAAO,CAAQ;gBAGnB,OAAO,EAAE,MAAM,GAAG,SAAS;IAOzB,cAAc,IAAI,OAAO,CAAC,IAAI,CAAC;IAI/B,gBAAgB,IAAI,OAAO,CAAC,IAAI,CAAC;IAMjC,UAAU,IAAI,OAAO,CAAC,IAAI,CAAC;IAI3B,YAAY,IAAI,OAAO,CAAC,IAAI,CAAC;CAGtC"}

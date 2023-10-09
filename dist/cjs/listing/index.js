@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListingClient = exports.jsonldToGraph = exports.graphToJsonld = exports.postJson = exports.listingAttributes = void 0;
+exports.ListingClient = exports.jsonldToGraph = exports.graphToJsonld = exports.postJson = exports.listingAttributes = exports.ATELLIX_CATALOG_ID = exports.ATELLIX_CATALOG = void 0;
 const web3_js_1 = require("@solana/web3.js");
 const uuid_1 = require("uuid");
 const anchor_1 = require("@coral-xyz/anchor");
@@ -20,10 +20,29 @@ const jssha_1 = __importDefault(require("jssha"));
 const bs58_1 = __importDefault(require("bs58"));
 const n3_1 = __importDefault(require("n3"));
 const serializer_js_1 = require("./serializer.js");
+exports.ATELLIX_CATALOG = {
+    'metadata': 0,
+    'public': 1,
+    'commerce': 2,
+    'event': 3,
+    'realestate': 4,
+    'investment': 5,
+    'employment': 6,
+};
+exports.ATELLIX_CATALOG_ID = {
+    '0': 'metadata',
+    '1': 'public',
+    '2': 'commerce',
+    '3': 'event',
+    '4': 'realestate',
+    '5': 'investment',
+    '6': 'employment',
+};
 exports.listingAttributes = [
     'InPerson',
     'LocalDelivery',
     'OnlineDownload',
+    'RequestForProposal',
 ];
 function getLonLatString(latlon) {
     latlon = latlon * (10 ** 7);
@@ -49,6 +68,17 @@ async function decodeURL(catalogProgram, listingData, urlEntry) {
         const decoded = decodeURIComponent(url);
         return decoded;
     }
+}
+function readAttributes(attrValue) {
+    var hval = attrValue.toString(16);
+    var bset = new bitset_1.default('0x' + hval);
+    var attrs = {};
+    for (var i = 0; i < exports.listingAttributes.length; i++) {
+        if (bset.get(i)) {
+            attrs[exports.listingAttributes[i]] = true;
+        }
+    }
+    return attrs;
 }
 function postJson(url, jsonData, token = undefined) {
     const headers = new Headers();
@@ -119,19 +149,151 @@ class ListingClient {
     // Catalog ID Offset = 24
     // Category Offset = 32
     // Filter By Offset = 48
-    getListings(catalog, categoryUri) {
-        const category = getHashBN(categoryUri);
-        const offset = 24;
-        const catbuf = buffer_1.Buffer.alloc(8);
-        catbuf.writeBigUInt64LE(BigInt(catalog));
-        var prefix = [];
-        prefix = prefix.concat(catbuf.toJSON().data);
-        // Category filter
-        const catdata = category.toBuffer().toJSON().data;
-        catdata.reverse(); // Borsh uses little-endian integers
-        prefix = prefix.concat(catdata);
-        console.log("Offset: " + offset + " Prefix: " + bs58_1.default.encode(prefix));
-        return 'OK';
+    async getListings(query) {
+        var _a, _b;
+        if (!(query.catalog in exports.ATELLIX_CATALOG)) {
+            throw new Error('Invalid catalog: ' + query.catalog);
+        }
+        var listings = [];
+        var source = (_a = query.source) !== null && _a !== void 0 ? _a : 'catalog';
+        var count;
+        if (source === 'catalog') {
+            const url = this.baseUrl + '/api/catalog/query';
+            const params = {
+                'command': 'get_listings',
+                'catalog': exports.ATELLIX_CATALOG[query.catalog],
+            };
+            if (query.category) {
+                params['category'] = query.category;
+            }
+            if (query.skip) {
+                params['skip'] = query.skip;
+            }
+            if (query.take) {
+                params['take'] = query.take;
+            }
+            const result = await postJson(url, params);
+            if (result.result !== 'ok') {
+                throw new Error((_b = result.error) !== null && _b !== void 0 ? _b : 'Request error');
+            }
+            count = result.count;
+            listings = result.listings;
+        }
+        else if (source === 'solana') {
+            const listingPrefix = [0x27, 0xea, 0xf9, 0x5e, 0x28, 0x32, 0xf4, 0x49];
+            const catbuf = buffer_1.Buffer.alloc(8);
+            catbuf.writeBigUInt64LE(BigInt(query.catalog));
+            var prefix = catbuf.toJSON().data;
+            var filters = [
+                { memcmp: { bytes: bs58_1.default.encode(listingPrefix), offset: 0 } },
+                { memcmp: { bytes: bs58_1.default.encode(prefix), offset: 24 } },
+            ];
+            if (query.category) {
+                const category = getHashBN(query.category);
+                var catdata = category.toBuffer().toJSON().data;
+                catdata.reverse(); // Borsh uses little-endian integers
+                prefix = prefix.concat(catdata);
+                filters[1] = { memcmp: { bytes: bs58_1.default.encode(prefix), offset: 24 } };
+            }
+            const accountList = await this.provider.connection.getProgramAccounts(this.catalogProgram.programId, { filters: filters });
+            for (var i = 0; i < accountList.length; i++) {
+                const act = accountList[i];
+                const listingData = await this.catalogProgram.account.catalogEntry.fetch(new web3_js_1.PublicKey(act.pubkey));
+                var locality = [];
+                for (var j = 0; j < listingData.filterBy.length; j++) {
+                    var localFilter = listingData.filterBy[j];
+                    if (localFilter.toString() !== '0') {
+                        locality.push(await this.getURI(localFilter.toBuffer()));
+                    }
+                }
+                var listing = {
+                    'catalog': exports.ATELLIX_CATALOG_ID[Number(query.catalog).toString()],
+                    'listing_account': act.pubkey.toString(),
+                    'listing_index': parseInt(listingData.listingIdx.toString()),
+                    'category': await this.getURI(listingData.category.toBuffer()),
+                    'locality': locality,
+                    'url': await decodeURL(this.catalogProgram, listingData, listingData.listingUrl),
+                    'uuid': (0, uuid_1.stringify)(listingData.uuid.toBuffer().toJSON().data),
+                    'label': await decodeURL(this.catalogProgram, listingData, listingData.labelUrl),
+                    'detail': JSON.parse(await decodeURL(this.catalogProgram, listingData, listingData.detailUrl)),
+                    'owner': listingData.owner.toString(),
+                    'attributes': readAttributes(listingData.attributes),
+                    'update_count': parseInt(listingData.updateCount.toString()),
+                    'update_ts': new Date(1000 * parseInt(listingData.updateTs.toString())),
+                };
+                var lat = null;
+                var lon = null;
+                if (Math.abs(listingData.latitude) < 2000000000 && Math.abs(listingData.longitude) < 2000000000) {
+                    listing['latitude'] = listingData.latitude / (10 ** 7);
+                    listing['longitude'] = listingData.longitude / (10 ** 7);
+                }
+                listings.push(listing);
+            }
+            count = listings.length;
+        }
+        return {
+            count: count,
+            listings: listings,
+        };
+    }
+    async getListingEntries(query) {
+        var _a;
+        var params = { 'command': 'get_listing_entries' };
+        if (query.skip) {
+            params['skip'] = query.skip;
+        }
+        if (query.take) {
+            params['take'] = query.take;
+        }
+        if (query.sort) {
+            params['sort'] = query.sort;
+        }
+        if (query.reverse) {
+            params['reverse'] = query.reverse;
+        }
+        const result = await postJson(query.url, params);
+        if (result.result !== 'ok') {
+            throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
+        }
+        return result;
+    }
+    async getCategoryList(req) {
+        var _a;
+        const url = this.baseUrl + '/api/catalog/category';
+        var params = {
+            'command': 'get_category_list',
+            'tree': null,
+            'base': null,
+            'depth': 1,
+        };
+        for (var k of ['tree', 'base', 'depth']) {
+            if (k in req) {
+                params[k] = req[k];
+            }
+        }
+        const result = await postJson(url, params);
+        if (result.result !== 'ok') {
+            throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
+        }
+        return result;
+    }
+    async search(req) {
+        var _a, _b;
+        const url = this.baseUrl + '/api/catalog/search';
+        var params = {
+            'command': 'search',
+            'catalog': (_a = req.catalog) !== null && _a !== void 0 ? _a : 'commerce',
+        };
+        for (var k of ['query', 'take', 'skip', 'catalog', 'category']) {
+            if (k in req) {
+                params[k] = req[k];
+            }
+        }
+        const result = await postJson(url, params);
+        if (result.result !== 'ok') {
+            throw new Error((_b = result.error) !== null && _b !== void 0 ? _b : 'Request error');
+        }
+        return result;
     }
     async getURLEntry(url, expandMode = 0) {
         const bufExpand = buffer_1.Buffer.alloc(1);
@@ -408,46 +570,14 @@ class ListingClient {
         if (owner.publicKey.toString() !== this.provider.wallet.publicKey.toString()) {
             signers.push(owner);
         }
+        li.transaction.recentBlockhash = (await this.provider.connection.getLatestBlockhash()).blockhash;
         if (signers.length > 0) {
-            res.push(await this.provider.sendAndConfirm(li.transaction, signers));
+            res.push(await this.provider.sendAndConfirm(li.transaction, signers, { 'maxRetries': 10, 'skipPreflight': true }));
         }
         else {
-            res.push(await this.provider.sendAndConfirm(li.transaction));
+            res.push(await this.provider.sendAndConfirm(li.transaction, [], { 'maxRetries': 10, 'skipPreflight': true }));
         }
         return res;
-    }
-    async storeRecord(user, record, data) {
-        const url = this.baseUrl + '/api/catalog/listing';
-        const postData = {
-            'command': 'set_record',
-            'user': user,
-            'record': record,
-            'data': data,
-        };
-        return await postJson(url, postData);
-    }
-    async storeListing(user, record, catalog, listing) {
-        const url = this.baseUrl + '/api/catalog/listing';
-        const postData = {
-            'command': 'set_listing',
-            'user': user,
-            'catalog': catalog,
-            'listing': listing,
-            'record': record,
-        };
-        return await postJson(url, postData);
-    }
-    async storeRecordAndListing(user, record, data, catalog, listing) {
-        const url = this.baseUrl + '/api/catalog/listing';
-        const postData = {
-            'command': 'set_listing',
-            'user': user,
-            'catalog': catalog,
-            'listing': listing,
-            'record': record,
-            'data': data,
-        };
-        return await postJson(url, postData);
     }
     async syncListings(owner, feePayer, catalog = 'commerce') {
         const url = this.baseUrl + '/api/catalog/listing';
@@ -473,6 +603,16 @@ class ListingClient {
                 .catch(error => { reject(error); });
         });
         return accessToken.access_token;
+    }
+    async getURI(uriData) {
+        const url = this.baseUrl + '/api/catalog/uri/' + bs58_1.default.encode(uriData);
+        const options = { method: 'GET' };
+        const uriResult = await new Promise((resolve, reject) => {
+            (0, cross_fetch_1.default)(url)
+                .then(response => { resolve(response.text()); })
+                .catch(error => { reject(error); });
+        });
+        return uriResult;
     }
 }
 exports.ListingClient = ListingClient;

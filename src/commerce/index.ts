@@ -1,5 +1,15 @@
 import fetch from 'cross-fetch'
 
+export interface RequestUUID {
+    uuid: string,
+}
+
+export interface PaymentRequest {
+    data: RequestUUID,
+    method: 'atellixpay' | 'authorizenet',
+    total: string,
+}
+
 export interface OrderItem {
     id: string,
     variant?: number,
@@ -16,6 +26,8 @@ export interface Order {
 export interface PrepareOrderResult {
     result: string,
     error?: string,
+    uuid?: string,
+    payments?: PaymentRequest[],
 }
 
 function postJson (url: string, jsonData: any): Promise<any> {
