@@ -328,7 +328,7 @@ class AtellixClient {
             return {
                 'result': 'error',
                 'error': error,
-                'transactions': [],
+                'transactions': transactions,
             };
         }
         return {

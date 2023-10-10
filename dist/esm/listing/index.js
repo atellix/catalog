@@ -191,7 +191,7 @@ export class ListingClient {
         else if (source === 'solana') {
             const listingPrefix = [0x27, 0xea, 0xf9, 0x5e, 0x28, 0x32, 0xf4, 0x49];
             const catbuf = Buffer.alloc(8);
-            catbuf.writeBigUInt64LE(BigInt(query.catalog));
+            catbuf.writeBigUInt64LE(BigInt(ATELLIX_CATALOG[Number(query.catalog).toString()]));
             var prefix = catbuf.toJSON().data;
             var filters = [
                 { memcmp: { bytes: bs58.encode(listingPrefix), offset: 0 } },
