@@ -348,7 +348,7 @@ export class ListingClient {
             this.catalogProgram = catalogProgram
         } else {
             const pk = ((catalogProgramIDL as any).metadata as any).address
-            this.catalogProgram = new Program(catalogProgramIDL as Idl, new PublicKey(pk))
+            this.catalogProgram = new Program(catalogProgramIDL as Idl, new PublicKey(pk), this.provider)
         }
         this.baseUrl = baseUrl ?? 'https://catalog.atellix.com'
         this.authUrl = authUrl ?? 'https://app.atellix.com'

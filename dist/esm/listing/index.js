@@ -147,7 +147,7 @@ export class ListingClient {
         }
         else {
             const pk = catalogProgramIDL.metadata.address;
-            this.catalogProgram = new Program(catalogProgramIDL, new PublicKey(pk));
+            this.catalogProgram = new Program(catalogProgramIDL, new PublicKey(pk), this.provider);
         }
         this.baseUrl = baseUrl !== null && baseUrl !== void 0 ? baseUrl : 'https://catalog.atellix.com';
         this.authUrl = authUrl !== null && authUrl !== void 0 ? authUrl : 'https://app.atellix.com';
