@@ -274,7 +274,7 @@
       "accounts": [
         {
           "name": "catalog",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -379,6 +379,10 @@
             "type": "u64"
           },
           {
+            "name": "catalogCounter",
+            "type": "u64"
+          },
+          {
             "name": "signer",
             "type": "publicKey"
           },
@@ -438,6 +442,10 @@
           {
             "name": "owner",
             "type": "publicKey"
+          },
+          {
+            "name": "listingIdx",
+            "type": "u64"
           },
           {
             "name": "listingUrl",
@@ -563,6 +571,33 @@
           }
         ]
       }
+    }
+  ],
+  "events": [
+    {
+      "name": "RemoveListingEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "catalog",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "listing",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "listingIdx",
+          "type": "u64",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
