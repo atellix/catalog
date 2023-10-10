@@ -1,7 +1,8 @@
 {
   "include": [
     "./src/**/*",
-    "src/commerce/atellix/token_agent.json"
+    "src/commerce/atellix/token_agent.json",
+    "src/listing/catalog.json"
   ],
   "compilerOptions": {
     "sourceMap": true,

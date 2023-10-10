@@ -20,6 +20,7 @@ const jssha_1 = __importDefault(require("jssha"));
 const bs58_1 = __importDefault(require("bs58"));
 const n3_1 = __importDefault(require("n3"));
 const serializer_js_1 = require("./serializer.js");
+const catalog_json_1 = __importDefault(require("./catalog.json"));
 exports.ATELLIX_CATALOG = {
     'metadata': 0,
     'public': 1,
@@ -138,8 +139,25 @@ function jsonldToGraph(jsonText) {
 exports.jsonldToGraph = jsonldToGraph;
 class ListingClient {
     constructor(provider, catalogProgram, baseUrl, authUrl, apiKey) {
-        this.provider = provider;
-        this.catalogProgram = catalogProgram;
+        if (this.provider) {
+            this.provider = provider;
+        }
+        else {
+            if (!process.env.ANCHOR_WALLET) {
+                process.env.ANCHOR_WALLET = 'id.json';
+            }
+            if (!process.env.ANCHOR_PROVIDER_URL) {
+                process.env.ANCHOR_PROVIDER_URL = 'https://api.mainnet-beta.solana.com';
+            }
+            this.provider = anchor_1.AnchorProvider.env();
+        }
+        if (catalogProgram) {
+            this.catalogProgram = catalogProgram;
+        }
+        else {
+            const pk = catalog_json_1.default.metadata.address;
+            this.catalogProgram = new anchor_1.Program(catalog_json_1.default, new web3_js_1.PublicKey(pk));
+        }
         this.baseUrl = baseUrl !== null && baseUrl !== void 0 ? baseUrl : 'https://catalog.atellix.com';
         this.authUrl = authUrl !== null && authUrl !== void 0 ? authUrl : 'https://app.atellix.com';
         this.apiKey = apiKey !== null && apiKey !== void 0 ? apiKey : '';

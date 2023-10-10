@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.abstractDefinitionMap = exports.abstractDefinitions = void 0;
 function buildDefinitions(typeData) {
     var defs = [];
     for (var i = 0; i < typeData.length; i++) {
-        var item = typeData[i];
+        const item = typeData[i];
         if (item.length > 2) {
             defs.push(buildDefinition(item[0], item[1], propData[item[0]], item[2]));
         }
@@ -14,11 +11,9 @@ function buildDefinitions(typeData) {
     }
     return defs;
 }
-function buildDefinition(typeName, typeUri, properties, extendsType) {
-    if (extendsType === void 0) { extendsType = ''; }
+function buildDefinition(typeName, typeUri, properties, extendsType = '') {
     var propuris = {};
-    Object.entries(properties).forEach(function (_a) {
-        var key = _a[0], value = _a[1];
+    Object.entries(properties).forEach(([key, value]) => {
         propuris[value.uri] = key;
     });
     var def = {
@@ -1287,5 +1282,5 @@ addProperty(propData['IEducationalOccupationalCredential'], ['validIn', 'IPlace'
 typeData.push(['IOccupationalExperienceRequirements', SCH('OccupationalExperienceRequirements'), 'IThing']);
 propData['IOccupationalExperienceRequirements'] = {};
 addProperty(propData['IOccupationalExperienceRequirements'], ['monthsOfExperience', 'number', SCH('monthsOfExperience'), false, true]);
-exports.abstractDefinitions = buildDefinitions(typeData);
-exports.abstractDefinitionMap = mapDefinitions(exports.abstractDefinitions);
+export const abstractDefinitions = buildDefinitions(typeData);
+export const abstractDefinitionMap = mapDefinitions(abstractDefinitions);

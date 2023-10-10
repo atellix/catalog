@@ -184,7 +184,7 @@ export declare class ListingClient {
     private baseUrl;
     private authUrl;
     private apiKey;
-    constructor(provider: AnchorProvider, catalogProgram: Program, baseUrl: string | undefined, authUrl: string | undefined, apiKey: string | undefined);
+    constructor(provider: AnchorProvider, catalogProgram: Program | undefined, baseUrl: string | undefined, authUrl: string | undefined, apiKey: string | undefined);
     getListings(query: ListingQuery): Promise<ListingQueryResult>;
     getListingEntries(query: ListingEntriesQuery): Promise<ListingEntriesResult>;
     getCategoryList(req: GetCategortListRequest): Promise<GetCategortListResult>;

@@ -1,6 +1,6 @@
 import { GetProgramAccountsFilter, PublicKey, Keypair, Transaction, TransactionInstruction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js'
 import { v4 as uuidv4, parse as uuidparse, stringify as uuidstr } from 'uuid'
-import { BN, AnchorProvider, Program } from '@coral-xyz/anchor'
+import { BN, Idl, AnchorProvider, Program } from '@coral-xyz/anchor'
 import { JsonLdParser } from 'jsonld-streaming-parser'
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Readable } from 'readable-stream'
@@ -15,6 +15,8 @@ import bs58 from 'bs58'
 import N3 from 'n3'
 
 import { SerializerJsonld } from './serializer.js'
+import catalogProgramIDL from './catalog.json'
+
 
 export const ATELLIX_CATALOG = {
     'metadata': 0,
@@ -326,13 +328,28 @@ export class ListingClient {
 
     constructor (
         provider: AnchorProvider,
-        catalogProgram: Program,
+        catalogProgram: Program | undefined,
         baseUrl: string | undefined,
         authUrl: string | undefined,
         apiKey: string | undefined,
     ) {
-        this.provider = provider
-        this.catalogProgram = catalogProgram
+        if (this.provider) {
+            this.provider = provider
+        } else {
+            if (!process.env.ANCHOR_WALLET) {
+                process.env.ANCHOR_WALLET = 'id.json'
+            }
+            if (!process.env.ANCHOR_PROVIDER_URL) {
+                process.env.ANCHOR_PROVIDER_URL = 'https://api.mainnet-beta.solana.com'
+            }
+            this.provider = AnchorProvider.env()
+        }
+        if (catalogProgram) {
+            this.catalogProgram = catalogProgram
+        } else {
+            const pk = ((catalogProgramIDL as any).metadata as any).address
+            this.catalogProgram = new Program(catalogProgramIDL as Idl, new PublicKey(pk))
+        }
         this.baseUrl = baseUrl ?? 'https://catalog.atellix.com'
         this.authUrl = authUrl ?? 'https://app.atellix.com'
         this.apiKey = apiKey ?? ''

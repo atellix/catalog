@@ -1,6 +1,6 @@
 import { PublicKey, Transaction, Ed25519Program, SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js';
 import { parse as uuidparse, stringify as uuidstr } from 'uuid';
-import { BN } from '@coral-xyz/anchor';
+import { BN, AnchorProvider, Program } from '@coral-xyz/anchor';
 import { JsonLdParser } from 'jsonld-streaming-parser';
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Readable } from 'readable-stream';
@@ -14,6 +14,7 @@ import jsSHA from 'jssha';
 import bs58 from 'bs58';
 import N3 from 'n3';
 import { SerializerJsonld } from './serializer.js';
+import catalogProgramIDL from './catalog.json';
 export const ATELLIX_CATALOG = {
     'metadata': 0,
     'public': 1,
@@ -129,8 +130,25 @@ export function jsonldToGraph(jsonText) {
 }
 export class ListingClient {
     constructor(provider, catalogProgram, baseUrl, authUrl, apiKey) {
-        this.provider = provider;
-        this.catalogProgram = catalogProgram;
+        if (this.provider) {
+            this.provider = provider;
+        }
+        else {
+            if (!process.env.ANCHOR_WALLET) {
+                process.env.ANCHOR_WALLET = 'id.json';
+            }
+            if (!process.env.ANCHOR_PROVIDER_URL) {
+                process.env.ANCHOR_PROVIDER_URL = 'https://api.mainnet-beta.solana.com';
+            }
+            this.provider = AnchorProvider.env();
+        }
+        if (catalogProgram) {
+            this.catalogProgram = catalogProgram;
+        }
+        else {
+            const pk = catalogProgramIDL.metadata.address;
+            this.catalogProgram = new Program(catalogProgramIDL, new PublicKey(pk));
+        }
         this.baseUrl = baseUrl !== null && baseUrl !== void 0 ? baseUrl : 'https://catalog.atellix.com';
         this.authUrl = authUrl !== null && authUrl !== void 0 ? authUrl : 'https://app.atellix.com';
         this.apiKey = apiKey !== null && apiKey !== void 0 ? apiKey : '';

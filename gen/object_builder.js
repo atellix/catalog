@@ -1,68 +1,61 @@
-"use strict";
-exports.__esModule = true;
-var uuid_1 = require("uuid");
-var n3_1 = require("n3");
-var schema_1 = require("./schema");
-var _a = n3_1["default"].DataFactory, namedNode = _a.namedNode, literal = _a.literal, quad = _a.quad;
+import { v4 as uuidv4 } from 'uuid';
+import N3 from 'n3';
+import { abstractDefinitionMap } from './schema';
+const { namedNode, literal, quad } = N3.DataFactory;
 function getBeginningOfDay(date) {
-    var dt = new Date(date);
+    const dt = new Date(date);
     dt.setHours(0, 0, 0, 0);
     return dt;
 }
 function isBeginningOfDay(date) {
-    var dt = new Date(date);
+    const dt = new Date(date);
     dt.setHours(0, 0, 0, 0);
     return dt.getTime() === date.getTime();
 }
-var ObjectBuilder = /** @class */ (function () {
-    function ObjectBuilder(defs) {
-        var _this = this;
+class ObjectBuilder {
+    constructor(defs) {
         this.defs = defs;
         this.typeDefs = {};
-        Object.entries(defs).forEach(function (_a) {
-            var key = _a[0], value = _a[1];
-            _this.typeDefs[value.uri] = key;
+        Object.entries(defs).forEach(([key, value]) => {
+            this.typeDefs[value.uri] = key;
         });
     }
-    ObjectBuilder.prototype.getAllProperties = function (type, cache) {
+    getAllProperties(type, cache) {
         if (type in cache) {
             return cache[type].properties;
         }
-        var def = this.defs[type];
+        const def = this.defs[type];
         var allProps;
-        if (def["extends"] && def["extends"] !== 'IObject') {
-            allProps = this.getAllProperties(def["extends"], cache);
+        if (def.extends && def.extends !== 'IObject') {
+            allProps = this.getAllProperties(def.extends, cache);
         }
         else {
             allProps = {};
         }
-        Object.entries(def.properties).forEach(function (_a) {
-            var key = _a[0], value = _a[1];
+        Object.entries(def.properties).forEach(([key, value]) => {
             allProps[key] = value;
         });
         return allProps;
-    };
-    ObjectBuilder.prototype.getAllPropertyUris = function (type, cache) {
+    }
+    getAllPropertyUris(type, cache) {
         if (type in cache) {
             return cache[type].uris;
         }
-        var def = this.defs[type];
+        const def = this.defs[type];
         var allProps;
-        if (def["extends"] && def["extends"] !== 'IObject') {
-            allProps = this.getAllPropertyUris(def["extends"], cache);
+        if (def.extends && def.extends !== 'IObject') {
+            allProps = this.getAllPropertyUris(def.extends, cache);
         }
         else {
             allProps = {};
         }
-        Object.entries(def.propertyUris).forEach(function (_a) {
-            var key = _a[0], value = _a[1];
+        Object.entries(def.propertyUris).forEach(([key, value]) => {
             allProps[key] = value;
         });
         return allProps;
-    };
-    ObjectBuilder.prototype.buildResource = function (store, type, node, obj, cache) {
-        var _this = this;
-        var def = this.defs[type];
+    }
+    buildResource(store, type, node, obj, cache) {
+        const def = this.defs[type];
         store.addQuad(quad(namedNode(node), namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), namedNode(def.uri)));
         var allProps;
         if (type in cache) {
@@ -72,16 +65,15 @@ var ObjectBuilder = /** @class */ (function () {
             allProps = this.getAllProperties(type, cache);
             cache[type] = { properties: allProps, uris: {} };
         }
-        Object.entries(allProps).forEach(function (_a) {
-            var key = _a[0], value = _a[1];
-            var dkey = key;
+        Object.entries(allProps).forEach(([key, value]) => {
+            let dkey = key;
             if (value.isOptional) {
                 if (!(dkey in obj)) {
                     return;
                 }
             }
             if (value.isArray) {
-                var arr = void 0;
+                let arr;
                 if (value.type === 'string') {
                     arr = obj[dkey];
                 }
@@ -97,12 +89,12 @@ var ObjectBuilder = /** @class */ (function () {
                 else {
                     arr = obj[dkey];
                 }
-                var itemList = namedNode(node + '#' + (0, uuid_1.v4)());
+                const itemList = namedNode(node + '#' + uuidv4());
                 store.addQuad(quad(itemList, namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'), namedNode('http://schema.org/ItemList')));
                 store.addQuad(quad(namedNode(node), namedNode(value.uri), itemList));
                 for (var i = 0; i < arr.length; i++) {
-                    var itemUri = node + '#' + (0, uuid_1.v4)();
-                    var item = namedNode(itemUri);
+                    const itemUri = node + '#' + uuidv4();
+                    const item = namedNode(itemUri);
                     store.addQuad(quad(itemList, namedNode('http://schema.org/itemListElement'), item));
                     store.addQuad(quad(item, namedNode('http://schema.org/position'), literal(i)));
                     if (value.type === 'string' || value.type === 'number' || value.type === 'boolean') {
@@ -117,9 +109,9 @@ var ObjectBuilder = /** @class */ (function () {
                         }
                     }
                     else {
-                        var subItemUri = node + '#' + (0, uuid_1.v4)();
+                        const subItemUri = node + '#' + uuidv4();
                         store.addQuad(quad(item, namedNode('http://schema.org/item'), namedNode(subItemUri)));
-                        _this.buildResource(store, value.type, subItemUri, obj[dkey][i], cache);
+                        this.buildResource(store, value.type, subItemUri, obj[dkey][i], cache);
                     }
                 }
             }
@@ -136,27 +128,26 @@ var ObjectBuilder = /** @class */ (function () {
                     }
                 }
                 else {
-                    var subItemUri = node + '#' + (0, uuid_1.v4)();
+                    const subItemUri = node + '#' + uuidv4();
                     store.addQuad(quad(namedNode(node), namedNode(value.uri), namedNode(subItemUri)));
-                    _this.buildResource(store, value.type, subItemUri, obj[dkey], cache);
+                    this.buildResource(store, value.type, subItemUri, obj[dkey], cache);
                 }
             }
         });
-    };
-    ObjectBuilder.prototype.decodeArray = function (store, type, nodeUri, cache) {
-        var _this = this;
-        var node = namedNode(nodeUri);
-        var vals = store.getQuads(node, namedNode('http://schema.org/itemListElement'), null, null);
+    }
+    decodeArray(store, type, nodeUri, cache) {
+        const node = namedNode(nodeUri);
+        const vals = store.getQuads(node, namedNode('http://schema.org/itemListElement'), null, null);
         var output = [];
-        vals.forEach(function (q) {
-            var listItem = q.object;
-            var pos = store.getQuads(listItem, namedNode('http://schema.org/position'), null, null);
-            var item = store.getQuads(listItem, namedNode('http://schema.org/item'), null, null);
+        vals.forEach((q) => {
+            const listItem = q.object;
+            const pos = store.getQuads(listItem, namedNode('http://schema.org/position'), null, null);
+            const item = store.getQuads(listItem, namedNode('http://schema.org/item'), null, null);
             if (pos.length === 1 && item.length === 1) {
                 output.push([parseInt(pos[0].object.value), item[0].object.value]);
             }
         });
-        output.sort(function (a, b) {
+        output.sort((a, b) => {
             if (a[0] < b[0]) {
                 return -1;
             }
@@ -165,10 +156,10 @@ var ObjectBuilder = /** @class */ (function () {
             }
             return 0;
         });
-        output = output.map(function (r) { return _this.decodeResource(store, type, r[1], cache); });
+        output = output.map((r) => this.decodeResource(store, type, r[1], cache));
         return output;
-    };
-    ObjectBuilder.prototype.decodeResource = function (store, type, nodeUri, cache) {
+    }
+    decodeResource(store, type, nodeUri, cache) {
         var item = { id: nodeUri, type: [] };
         var allProps;
         var allUris;
@@ -181,18 +172,18 @@ var ObjectBuilder = /** @class */ (function () {
             allUris = this.getAllPropertyUris(type, cache);
             cache[type] = { properties: allProps, uris: allUris };
         }
-        var node = namedNode(nodeUri);
-        var vals = store.getQuads(node, null, null, null);
+        const node = namedNode(nodeUri);
+        const vals = store.getQuads(node, null, null, null);
         for (var i = 0; i < vals.length; i++) {
-            var propUri = vals[i].predicate.value;
+            const propUri = vals[i].predicate.value;
             if (propUri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
                 if (vals[i].object.value in this.typeDefs) {
                     item.type = this.typeDefs[vals[i].object.value];
                 }
             }
             else if (propUri in allUris) {
-                var propKey = allUris[propUri];
-                var prop = allProps[propKey];
+                const propKey = allUris[propUri];
+                const prop = allProps[propKey];
                 if (prop.isArray) {
                     item[propKey] = this.decodeArray(store, prop.type, vals[i].object.value, cache);
                 }
@@ -216,41 +207,40 @@ var ObjectBuilder = /** @class */ (function () {
             }
         }
         return item;
-    };
-    return ObjectBuilder;
-}());
+    }
+}
 function construct(defs) {
-    var builder = new ObjectBuilder(defs);
-    var type = 'IEvent';
-    var obj = {
+    const builder = new ObjectBuilder(defs);
+    const type = 'IEvent';
+    const obj = {
         id: 'http://example.com/event/1',
         name: 'Birthday Party',
         description: 'Mikes Birthday Party',
         startDate: getBeginningOfDay(new Date()),
         image: [
             {
-                url: 'https://www.gravatar.com/avatar/c9cb338a29d608d33e16ff3f2e7f9635?s=64&d=identicon&r=PG'
+                url: 'https://www.gravatar.com/avatar/c9cb338a29d608d33e16ff3f2e7f9635?s=64&d=identicon&r=PG',
             }
-        ]
+        ],
     };
     console.log(obj);
-    var store = new n3_1["default"].Store();
+    const store = new N3.Store();
     // Build
     builder.buildResource(store, type, obj.id, obj, {});
     // Write 
-    var writer = new n3_1["default"].Writer({
+    const writer = new N3.Writer({
         prefixes: {
             'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
             'schema': 'http://schema.org/',
-            'catalog': 'http://rdf.atellix.com/schema/catalog/'
+            'catalog': 'http://rdf.atellix.net/schema/catalog/',
         }
     });
-    store.forEach(function (q) {
+    store.forEach((q) => {
         writer.addQuad(q);
     });
-    writer.end(function (error, result) { return console.log(result); });
+    writer.end((error, result) => console.log(result));
     // Decode 
-    var rsrc = builder.decodeResource(store, type, obj.id, {});
+    const rsrc = builder.decodeResource(store, type, obj.id, {});
     console.log(rsrc);
 }
-construct(schema_1.abstractDefinitionMap);
+construct(abstractDefinitionMap);
