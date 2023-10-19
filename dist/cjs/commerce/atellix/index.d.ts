@@ -18,6 +18,7 @@ export interface TransactionResult {
 export interface CheckoutResult {
     result: string;
     error?: string;
+    payments: PaymentRequest[];
     transactions: TransactionResult[];
 }
 export interface AdminTokenResult {

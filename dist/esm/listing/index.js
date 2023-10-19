@@ -13,8 +13,11 @@ import BitSet from 'bitset';
 import jsSHA from 'jssha';
 import bs58 from 'bs58';
 import N3 from 'n3';
+import { ObjectBuilder } from '../record';
+import { abstractDefinitionMap } from '../record/schema';
 import { SerializerJsonld } from './serializer.js';
 import catalogProgramIDL from './catalog.json';
+const { namedNode } = N3.DataFactory;
 export const ATELLIX_CATALOG = {
     'metadata': 0,
     'public': 1,
@@ -127,6 +130,14 @@ export function jsonldToGraph(jsonText) {
         parser.write(jsonText);
         parser.end();
     });
+}
+export async function decodeJsonld(data, url) {
+    const jsonText = JSON.stringify(data);
+    const store = await jsonldToGraph(jsonText);
+    const builder = new ObjectBuilder(abstractDefinitionMap);
+    var rsrc = builder.decodeResource(store, namedNode(url), {});
+    rsrc['id'] = url;
+    return rsrc;
 }
 export class ListingClient {
     constructor(provider, catalogProgram, baseUrl, authUrl, apiKey) {
@@ -261,6 +272,31 @@ export class ListingClient {
             params['reverse'] = query.reverse;
         }
         const result = await postJson(query.url, params);
+        if (result.result !== 'ok') {
+            throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
+        }
+        return result;
+    }
+    async getCategoryEntries(query) {
+        var _a;
+        const url = this.baseUrl + '/api/catalog/category';
+        var params = {
+            'command': 'get_category_entries',
+            'category': query.category,
+        };
+        if (query.skip) {
+            params['skip'] = query.skip;
+        }
+        if (query.take) {
+            params['take'] = query.take;
+        }
+        if (query.sort) {
+            params['sort'] = query.sort;
+        }
+        if (query.reverse) {
+            params['reverse'] = query.reverse;
+        }
+        const result = await postJson(url, params);
         if (result.result !== 'ok') {
             throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
         }

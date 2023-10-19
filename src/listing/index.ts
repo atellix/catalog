@@ -14,9 +14,12 @@ import jsSHA from 'jssha'
 import bs58 from 'bs58'
 import N3 from 'n3'
 
+import { ObjectBuilder } from '../record'
+import { abstractDefinitionMap } from '../record/schema'
 import { SerializerJsonld } from './serializer.js'
 import catalogProgramIDL from './catalog.json'
 
+const { namedNode } = N3.DataFactory
 
 export const ATELLIX_CATALOG = {
     'metadata': 0,
@@ -124,11 +127,22 @@ export interface ListingEntriesQuery {
     reverse?: boolean,
 }
 
+export interface CategoryEntriesQuery {
+    catalog: string,
+    category: string,
+    take?: number,
+    skip?: number,
+    sort?: 'price' | 'name',
+    reverse?: boolean,
+}
+
 export interface ListingEntriesResult {
     result: string,
     error?: string,
     count: number,
+    owners?: any,
     entries: any[],
+    listings?: any[],
 }
 
 export interface ListingInstructions {
@@ -317,14 +331,22 @@ export function jsonldToGraph (jsonText: string): Promise<any> {
     })
 }
 
-export class ListingClient {
-    public accessToken: string
+export async function decodeJsonld(data: any, url: string): Promise<any> {
+    const jsonText = JSON.stringify(data)
+    const store = await jsonldToGraph(jsonText)
+    const builder = new ObjectBuilder(abstractDefinitionMap)
+    var rsrc = builder.decodeResource(store, namedNode(url), {})
+    rsrc['id'] = url
+    return rsrc
+}
 
-    private provider: AnchorProvider
-    private catalogProgram: Program
-    private baseUrl: string
-    private authUrl: string
-    private apiKey: string
+export class ListingClient {
+    public provider: AnchorProvider
+    public catalogProgram: Program
+    public baseUrl: string
+    public authUrl: string
+    public apiKey: string
+    public accessToken: string
 
     constructor (
         provider: AnchorProvider,
@@ -461,6 +483,31 @@ export class ListingClient {
             params['reverse'] = query.reverse
         }
         const result = await postJson(query.url, params) as ListingEntriesResult
+        if (result.result !== 'ok') {
+            throw new Error(result.error ?? 'Request error')
+        }
+        return result
+    }
+
+    async getCategoryEntries (query: CategoryEntriesQuery): Promise<ListingEntriesResult> {
+        const url = this.baseUrl + '/api/catalog/category'
+        var params: any = {
+            'command': 'get_category_entries',
+            'category': query.category,
+        }
+        if (query.skip) {
+            params['skip'] = query.skip
+        }
+        if (query.take) {
+            params['take'] = query.take
+        }
+        if (query.sort) {
+            params['sort'] = query.sort
+        }
+        if (query.reverse) {
+            params['reverse'] = query.reverse
+        }
+        const result = await postJson(url, params) as ListingEntriesResult
         if (result.result !== 'ok') {
             throw new Error(result.error ?? 'Request error')
         }

@@ -446,7 +446,7 @@ query assets ($options: AssetListOptions) {
                 params[k] = options[k];
             }
         }
-        const result = await this.gqlRequest(doc, { 'input': params }, this.authToken);
+        const result = await this.gqlRequest(doc, { 'options': params }, this.authToken);
         return result.data.assets;
     }
     async createAssets(assets) {

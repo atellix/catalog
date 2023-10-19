@@ -1,3 +1,6 @@
+import { PublicKey } from '@solana/web3.js';
+import { ListingClient, ListingQueryResult, ListingEntriesResult, SearchRequest, SearchResult } from '../listing';
+import { CheckoutResult } from './atellix';
 export interface RequestUUID {
     uuid: string;
 }
@@ -13,9 +16,9 @@ export interface OrderItem {
 }
 export interface Order {
     items: OrderItem[];
-    payment_method?: 'atellixpay' | 'authorizenet';
-    billing_address?: any;
-    shipping_address?: any;
+    paymentMethod?: 'atellixpay' | 'authorizenet';
+    billingAddress?: any;
+    shippingAddress?: any;
 }
 export interface PrepareOrderResult {
     result: string;
@@ -23,9 +26,17 @@ export interface PrepareOrderResult {
     uuid?: string;
     payments?: PaymentRequest[];
 }
-export declare class CommerceCatalog {
-    private baseUrl;
-    constructor(baseUrl: string | undefined);
+export interface CheckoutSpec {
+    order?: Order;
+    payments?: PaymentRequest[];
+    paymentWallet?: PublicKey;
+    paymentToken?: string;
+}
+export declare class CommerceCatalog extends ListingClient {
+    getListings(query: any): Promise<ListingQueryResult>;
+    getCategoryEntries(query: any): Promise<ListingEntriesResult>;
+    search(query: SearchRequest): Promise<SearchResult>;
     prepareOrder(order: Order): Promise<PrepareOrderResult>;
+    checkout(spec: CheckoutSpec): Promise<CheckoutResult>;
 }
 //# sourceMappingURL=index.d.ts.map

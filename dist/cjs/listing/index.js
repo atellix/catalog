@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListingClient = exports.jsonldToGraph = exports.graphToJsonld = exports.postJson = exports.listingAttributes = exports.ATELLIX_CATALOG_ID = exports.ATELLIX_CATALOG = void 0;
+exports.ListingClient = exports.decodeJsonld = exports.jsonldToGraph = exports.graphToJsonld = exports.postJson = exports.listingAttributes = exports.ATELLIX_CATALOG_ID = exports.ATELLIX_CATALOG = void 0;
 const web3_js_1 = require("@solana/web3.js");
 const uuid_1 = require("uuid");
 const anchor_1 = require("@coral-xyz/anchor");
@@ -19,8 +19,11 @@ const bitset_1 = __importDefault(require("bitset"));
 const jssha_1 = __importDefault(require("jssha"));
 const bs58_1 = __importDefault(require("bs58"));
 const n3_1 = __importDefault(require("n3"));
+const record_1 = require("../record");
+const schema_1 = require("../record/schema");
 const serializer_js_1 = require("./serializer.js");
 const catalog_json_1 = __importDefault(require("./catalog.json"));
+const { namedNode } = n3_1.default.DataFactory;
 exports.ATELLIX_CATALOG = {
     'metadata': 0,
     'public': 1,
@@ -137,6 +140,15 @@ function jsonldToGraph(jsonText) {
     });
 }
 exports.jsonldToGraph = jsonldToGraph;
+async function decodeJsonld(data, url) {
+    const jsonText = JSON.stringify(data);
+    const store = await jsonldToGraph(jsonText);
+    const builder = new record_1.ObjectBuilder(schema_1.abstractDefinitionMap);
+    var rsrc = builder.decodeResource(store, namedNode(url), {});
+    rsrc['id'] = url;
+    return rsrc;
+}
+exports.decodeJsonld = decodeJsonld;
 class ListingClient {
     constructor(provider, catalogProgram, baseUrl, authUrl, apiKey) {
         if (this.provider) {
@@ -270,6 +282,31 @@ class ListingClient {
             params['reverse'] = query.reverse;
         }
         const result = await postJson(query.url, params);
+        if (result.result !== 'ok') {
+            throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
+        }
+        return result;
+    }
+    async getCategoryEntries(query) {
+        var _a;
+        const url = this.baseUrl + '/api/catalog/category';
+        var params = {
+            'command': 'get_category_entries',
+            'category': query.category,
+        };
+        if (query.skip) {
+            params['skip'] = query.skip;
+        }
+        if (query.take) {
+            params['take'] = query.take;
+        }
+        if (query.sort) {
+            params['sort'] = query.sort;
+        }
+        if (query.reverse) {
+            params['reverse'] = query.reverse;
+        }
+        const result = await postJson(url, params);
         if (result.result !== 'ok') {
             throw new Error((_a = result.error) !== null && _a !== void 0 ? _a : 'Request error');
         }

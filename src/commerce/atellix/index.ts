@@ -59,6 +59,7 @@ export interface TransactionResult {
 export interface CheckoutResult {
     result: string,
     error?: string,
+    payments: PaymentRequest[],
     transactions: TransactionResult[],
 }
 
@@ -418,11 +419,13 @@ export class AtellixClient {
                 'result': 'error',
                 'error': error,
                 'transactions': transactions,
+                'payments': [],
             }
         }
         return {
             'result': 'ok',
             'transactions': transactions,
+            'payments': [],
         }
     }
 
@@ -463,7 +466,9 @@ export class AtellixClient {
         this.updateNetData(orders[0].net_data)
         this.updateSwapData(orders[0].swap_data)
         this.updateOrderData(orderList)
-        return await this.merchantCheckout(orderParams, walletPK)
+        var ckres = await this.merchantCheckout(orderParams, walletPK)
+        ckres.payments = payments
+        return ckres
     }
 
     async getAdminToken(tokenType: string, apiKey: string): Promise<AdminTokenResult> {

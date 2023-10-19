@@ -95,11 +95,21 @@ export interface ListingEntriesQuery {
     sort?: 'price' | 'name';
     reverse?: boolean;
 }
+export interface CategoryEntriesQuery {
+    catalog: string;
+    category: string;
+    take?: number;
+    skip?: number;
+    sort?: 'price' | 'name';
+    reverse?: boolean;
+}
 export interface ListingEntriesResult {
     result: string;
     error?: string;
     count: number;
+    owners?: any;
     entries: any[];
+    listings?: any[];
 }
 export interface ListingInstructions {
     uuid: string;
@@ -177,16 +187,18 @@ export declare const listingAttributes: string[];
 export declare function postJson(url: string, jsonData: any, token?: string | undefined): Promise<any>;
 export declare function graphToJsonld(store: any, baseIRI: string): Promise<string>;
 export declare function jsonldToGraph(jsonText: string): Promise<any>;
+export declare function decodeJsonld(data: any, url: string): Promise<any>;
 export declare class ListingClient {
+    provider: AnchorProvider;
+    catalogProgram: Program;
+    baseUrl: string;
+    authUrl: string;
+    apiKey: string;
     accessToken: string;
-    private provider;
-    private catalogProgram;
-    private baseUrl;
-    private authUrl;
-    private apiKey;
     constructor(provider: AnchorProvider, catalogProgram: Program | undefined, baseUrl: string | undefined, authUrl: string | undefined, apiKey: string | undefined);
     getListings(query: ListingQuery): Promise<ListingQueryResult>;
     getListingEntries(query: ListingEntriesQuery): Promise<ListingEntriesResult>;
+    getCategoryEntries(query: CategoryEntriesQuery): Promise<ListingEntriesResult>;
     getCategoryList(req: GetCategortListRequest): Promise<GetCategortListResult>;
     search(req: SearchRequest): Promise<SearchResult>;
     getURLEntry(url: string, expandMode?: number): Promise<PublicKey>;

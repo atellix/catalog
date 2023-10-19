@@ -329,11 +329,13 @@ class AtellixClient {
                 'result': 'error',
                 'error': error,
                 'transactions': transactions,
+                'payments': [],
             };
         }
         return {
             'result': 'ok',
             'transactions': transactions,
+            'payments': [],
         };
     }
     async checkout(payments, walletPK, paymentToken) {
@@ -373,7 +375,9 @@ class AtellixClient {
         this.updateNetData(orders[0].net_data);
         this.updateSwapData(orders[0].swap_data);
         this.updateOrderData(orderList);
-        return await this.merchantCheckout(orderParams, walletPK);
+        var ckres = await this.merchantCheckout(orderParams, walletPK);
+        ckres.payments = payments;
+        return ckres;
     }
     async getAdminToken(tokenType, apiKey) {
         if (tokenType === 'vendure') {
