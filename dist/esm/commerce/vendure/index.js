@@ -159,7 +159,7 @@ query search ($input: SearchInput!) {
                 'trackInventory': 'FALSE',
                 'customFields': {},
             };
-            for (var k of ['facetValueIds', 'taxCategoryId', 'optionIds', 'assetIds']) {
+            for (var k of ['facetValueIds', 'taxCategoryId', 'optionIds', 'assetIds', 'featuredAssetId']) {
                 if (k in variant) {
                     variantInfo[k] = variant[k];
                 }
