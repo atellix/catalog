@@ -1,8 +1,7 @@
 {
   "name": "@atellix/catalog",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Atellix Catalog API",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/atellix/catalog.git"
