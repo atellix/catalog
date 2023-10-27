@@ -2,6 +2,7 @@
   "name": "@atellix/catalog",
   "version": "1.0.0",
   "description": "Atellix Catalog API",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/atellix/catalog.git"
@@ -17,7 +18,6 @@
     "lint:fix": "prettier src/** tests/** -w",
     "lint": "prettier src/** tests/** --check",
     "watch": "tsc -p tsconfig.cjs.json --watch",
-    "prepublishOnly": "yarn build",
     "docs": "typedoc --excludePrivate --includeVersion --categorizeByGroup --defaultCategory Catalog --out docs --readme none src/index.ts",
     "test": "jest tests --detectOpenHandles"
   },
